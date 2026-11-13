@@ -1,0 +1,57 @@
+{
+  "product": "RoleLeaf",
+  "release": "0.5.4",
+  "status": "private-review",
+  "license": "pending",
+  "created_at": "2026-11-13T17:15:02+08:00",
+  "repository": "https://github.com/quillharbor/roleleaf",
+  "artifacts": [
+    {
+      "platform": "chrome",
+      "version": "0.5.4",
+      "filename": "RoleLeaf-0.5.4.zip",
+      "path": "dist/RoleLeaf-0.5.4.zip",
+      "bytes": 212364,
+      "sha256": "d0752e88936445383dd2d1f1f1e255eefb0c9edb2a60f7baea3ab536344216fa",
+      "minimum": "Chrome 111"
+    },
+    {
+      "platform": "macos",
+      "version": "0.5.4",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.4-arm64.dmg",
+      "path": "desktop/release/0.5.4-arm64-ueXy6T/RoleLeaf-TEST-ONLY-0.5.4-arm64.dmg",
+      "bytes": 108761993,
+      "sha256": "25364cf668db25dd92688ac24f04c61c5e7ac7379027a1c669c664be93bf798e",
+      "application_id": "io.github.quillharbor.roleleaf",
+      "architecture": "arm64",
+      "minimum": "macOS 13",
+      "signing": "ad-hoc",
+      "notarized": false
+    },
+    {
+      "platform": "android",
+      "version": "0.5.4-android.15",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.4-android.15.apk",
+      "path": "android/release/0.5.4-android.15/RoleLeaf-TEST-ONLY-0.5.4-android.15.apk",
+      "bytes": 4868518,
+      "sha256": "a9b8952ae03127dc345a51caade3d8c8100bdd95e667ea96d7b5924b0263f4ef",
+      "application_id": "io.github.quillharbor.roleleaf.test",
+      "version_code": 15,
+      "minimum": "Android 8 / API 26",
+      "signing": "per-checkout debug key",
+      "certificate_sha256": "8f0f8f29a450c64588e6f4a0e687aef1213a160f598d4cf214fbeaba06ad515e"
+    }
+  ],
+  "checks": [
+    "58 Node tests",
+    "Chrome ZIP CRC and source match",
+    "macOS DMG verification, ASAR source match and ad-hoc signature",
+    "Android assembleDebug, lintDebug, APK v2 signature, CRC and asset match",
+    "source and application-payload identity scan"
+  ],
+  "not_verified": [
+    "clean-device installation and upgrades",
+    "live reported Tipsy conversation",
+    "production signing and notarization"
+  ]
+}

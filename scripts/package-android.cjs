@@ -11,6 +11,18 @@ function run(command, args) {
 }
 run(process.execPath, ['scripts/build.cjs']);
 run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['test']);
+// Each checkout has its own disposable development identity; never ship the key.
+const debugKey = path.join(root, 'android/.signing/debug.keystore');
+if (!fs.existsSync(debugKey)) {
+  fs.mkdirSync(path.dirname(debugKey), { recursive: true, mode: 0o700 });
+  const keytool = process.env.JAVA_HOME
+    ? path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'keytool.exe' : 'keytool')
+    : 'keytool';
+  run(keytool, ['-genkeypair', '-keystore', debugKey, '-storepass', 'android', '-keypass', 'android',
+    '-alias', 'androiddebugkey', '-keyalg', 'RSA', '-keysize', '2048', '-validity', '10000',
+    '-dname', 'CN=RoleLeaf Debug,O=quillharbor']);
+  fs.chmodSync(debugKey, 0o600);
+}
 const extra = process.argv.slice(2); // e.g. --offline or -I /path/to/local-mirror.init.gradle
 run(process.platform === 'win32' ? 'android/gradlew.bat' : './android/gradlew', ['-p', 'android', ':app:assembleDebug', ':app:lintDebug', '--console=plain', ...extra]);
 const source = path.join(root, 'android/app/build/outputs/apk/debug');
