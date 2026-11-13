@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RoleLeaf</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="picker">
+  <header>
+    <span class="eyebrow">BOT EXPORTER</span>
+    <h1>Choose characters to export</h1>
+    <p id="identity">Detecting the source site…</p>
+  </header>
+  <main>
+    <p id="status" role="status" aria-live="polite"></p>
+    <section id="picker" hidden aria-label="Chat list">
+      <input id="search" type="search" aria-label="Search characters" placeholder="Search by name or ID">
+      <div class="picker-tools">
+        <label><input id="select-all" type="checkbox"> Select all results</label>
+        <button id="clear" class="link" type="button">Clear selection</button>
+      </div>
+      <div id="bot-list" class="bot-list" aria-label="Select characters"></div>
+      <p id="empty" class="muted" hidden>No matching characters.</p>
+    </section>
+    <footer class="picker-footer">
+      <span id="selected-count" aria-live="polite">0 selected</span>
+      <button id="collect" class="primary" type="button" disabled>Export characters</button>
+    </footer>
+    <p class="footnote">Each character gets a ZIP with its card, images, and current chat. The list comes from the chat sidebar on this page.</p>
+    <div class="actions">
+      <button id="refresh-list" class="link" type="button">Refresh list</button>
+      <button id="refresh-page" class="link" type="button">Reload source page</button>
+    </div>
+  </main>
+  <script src="core.js"></script>
+  <script src="bot-model.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

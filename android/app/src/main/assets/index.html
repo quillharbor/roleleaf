@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; base-uri 'none'; form-action 'none'">
+<title>RoleLeaf</title><link rel="stylesheet" href="mobile.css"></head>
+<body data-phase="empty">
+<svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 10 6-4M9 14l6 4"/></symbol>
+</defs></svg>
+<main id="chat-picker" class="chat-picker" aria-labelledby="picker-title">
+<header class="picker-header">
+<div><p id="picker-platform">Tipsy</p><h1 id="picker-title">Choose characters</h1></div>
+<button id="cancel-picker" type="button">Cancel</button>
+</header>
+<div class="picker-tools">
+<input id="bot-search" type="search" placeholder="Search by name or ID" aria-label="Search recent characters" autocomplete="off">
+<div class="list-selection"><label><input id="select-visible" type="checkbox">Select all results</label><button id="clear-selection" class="text-button">Clear selection</button></div>
+<div class="list-info"><p id="list-count" role="status"></p><button id="load-list" class="text-button">Refresh list</button></div>
+</div>
+<div class="picker-list">
+<div id="bot-list" aria-label="Recent characters"></div>
+<p id="list-empty" class="list-empty"></p>
+<p id="list-notice" class="list-empty" role="status" hidden></p>
+</div>
+<footer class="picker-footer">
+<p id="selection-count" role="status">0 selected</p>
+<div class="action-row"><button id="export" class="secondary" hidden>Export current chat</button><button id="export-selected" class="primary" disabled>Export (0)</button></div>
+</footer>
+</main>
+<dialog id="export-dialog" aria-labelledby="status-title">
+<div class="dialog-head"><h2 id="status-title">Export</h2><button id="close-export" class="dialog-close" type="button" aria-label="Close export dialog">×</button></div>
+<p id="export-character" class="export-character" hidden></p>
+<p id="status" role="status" aria-live="polite"></p>
+<progress id="export-progress" aria-label="Export progress" hidden></progress>
+<div id="result" class="result" hidden><div class="result-head"><span><i></i><span id="result-label">Export ready</span></span></div><div class="stats"><div><strong id="message-count">0</strong><span>messages</span></div><div><strong id="image-count">0</strong><span>images</span></div><div><strong id="package-size">0</strong><span id="size-unit">KB</span></div></div></div>
+<div class="action-row dialog-actions"><button id="stop" class="secondary" hidden>Stop export</button><button id="save" class="primary" hidden><svg><use href="#i-download"/></svg><span id="save-label">Save ZIP</span></button><button id="share" class="primary" hidden><svg><use href="#i-share"/></svg><span>Share export</span></button><button id="save-copy" class="secondary" hidden>Save a copy</button></div>
+</dialog>
+<script src="shared/core.js"></script><script src="shared/chat.js"></script><script src="shared/png.js"></script><script src="shared/bot-model.js"></script><script src="shared/bot-package.js"></script><script src="shared/collect-bot.js"></script><script src="mobile-batch.js"></script><script src="mobile.js"></script>
+</body></html>

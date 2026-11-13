@@ -1,0 +1,36 @@
+appId: io.github.quillharbor.roleleaf
+productName: RoleLeaf
+electronVersion: 45.2.3
+asar: true
+npmRebuild: false
+compression: maximum
+forceCodeSigning: true
+directories:
+  output: desktop/release-notarized
+files:
+  - desktop/*.cjs
+  - desktop/*.js
+  - desktop/*.css
+  - desktop/*.html
+  - tipsy-exporter/*.js
+  - package.json
+extraMetadata:
+  main: desktop/main.cjs
+mac:
+  minimumSystemVersion: "13.0"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: true
+  category: public.app-category.productivity
+  electronLanguages:
+    - en
+  target:
+    - target: dmg
+      arch: universal
+dmg:
+  sign: true
+  format: UDBZ
+  title: RoleLeaf
+artifactName: RoleLeaf-${version}-${arch}.dmg

@@ -1,0 +1,19 @@
+{
+  "name": "roleleaf",
+  "version": "0.5.4",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "45.2.3"
+  },
+  "license": "UNLICENSED",
+  "author": "quillharbor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quillharbor/roleleaf.git"
+  },
+  "homepage": "https://github.com/quillharbor/roleleaf"
+}

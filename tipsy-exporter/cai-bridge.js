@@ -1,0 +1,5 @@
+(function(){
+'use strict';const M=globalThis.BotModel,pending=new Map();
+window.addEventListener('message',e=>{if(e.source!==window||e.origin!==location.origin)return;const m=e.data;if(m?.channel!==M.CHANNEL||m.type!=='CAI_RESULT')return;const item=pending.get(m.requestId);if(!item)return;pending.delete(m.requestId);clearTimeout(item.timer);const r=M.route(location.href);item.respond(r?.id===item.id&&m.result?.status?.character_id===item.id?m.result:{ok:false,reason:'navigated'});});
+chrome.runtime.onMessage.addListener((m,sender,respond)=>{if(sender.id!==chrome.runtime.id)return;if(m?.type==='BOT_SIDEBAR'){respond(globalThis.BotSidebar.read());return;}if(m?.type!=='BOT_CAI'||!['status','start','cancel','export'].includes(m.action))return;const r=M.route(location.href);if(!r||r.id!==m.characterId){respond({ok:false,reason:'navigated'});return;}const requestId=crypto.randomUUID(),timer=setTimeout(()=>{pending.delete(requestId);respond({ok:false,reason:'unavailable'});},5000);pending.set(requestId,{id:r.id,timer,respond});window.postMessage({channel:M.CHANNEL,type:'CAI_COMMAND',requestId,characterId:r.id,action:m.action},location.origin);return true;});
+})();

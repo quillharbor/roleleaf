@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "RoleLeaf",
+  "version": "0.5.4",
+  "description": "Export character cards, images, and current chats from Tipsy or Character.AI. Each character gets a ZIP.",
+  "minimum_chrome_version": "111",
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://img.tipsy.chat/*",
+    "https://characterai.io/*"
+  ],
+  "action": {
+    "default_title": "Export with RoleLeaf",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://tipsy.chat/*"
+      ],
+      "js": [
+        "page.bundle.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://tipsy.chat/*"
+      ],
+      "js": [
+        "bridge.bundle.js"
+      ],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    },
+    {
+      "matches": [
+        "https://character.ai/*"
+      ],
+      "js": [
+        "cai-page.bundle.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://character.ai/*"
+      ],
+      "js": [
+        "cai-bridge.bundle.js"
+      ],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    }
+  ]
+}

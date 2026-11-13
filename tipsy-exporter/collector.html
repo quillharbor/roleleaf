@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RoleLeaf · Export</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="collector">
+  <header>
+    <span class="eyebrow" id="version">BOT EXPORTER</span>
+    <h1 id="name">Export current character</h1>
+    <p>Each character gets a ZIP with its card, images, and messages.</p>
+  </header>
+  <main>
+    <p id="progress" role="status" aria-live="polite">Connecting to source page…</p>
+    <section id="batch" hidden aria-label="Export queue">
+      <p id="destination"></p>
+      <ol id="queue"></ol>
+    </section>
+    <div class="task-actions">
+      <button id="stop" disabled>Stop and save</button>
+      <button id="retry" hidden>Try again</button>
+    </div>
+    <p id="summary"></p>
+    <p class="footnote">Keep the export tab and source chat open. Avoid editing messages or switching chats during export.</p>
+  </main>
+  <script src="core.js"></script>
+  <script src="chat.js"></script>
+  <script src="png.js"></script>
+  <script src="bot-model.js"></script>
+  <script src="bot-package.js"></script>
+  <script src="collect-bot.js"></script>
+  <script src="collector.js"></script>
+</body>
+</html>

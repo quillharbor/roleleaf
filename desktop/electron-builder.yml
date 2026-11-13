@@ -1,0 +1,34 @@
+appId: io.github.quillharbor.roleleaf
+productName: RoleLeaf
+electronVersion: 45.2.3
+asar: true
+npmRebuild: false
+compression: maximum
+afterPack: scripts/after-pack.cjs
+directories:
+  output: desktop/release
+files:
+  - desktop/*.cjs
+  - desktop/*.js
+  - desktop/*.css
+  - desktop/*.html
+  - tipsy-exporter/*.js
+  - package.json
+extraMetadata:
+  main: desktop/main.cjs
+mac:
+  minimumSystemVersion: "13.0"
+  identity: null
+  hardenedRuntime: false
+  notarize: false
+  category: public.app-category.productivity
+  electronLanguages:
+    - en
+  target:
+    - target: dmg
+      arch: universal
+dmg:
+  sign: false
+  format: UDBZ
+  title: RoleLeaf
+artifactName: RoleLeaf-TEST-ONLY-${version}-${arch}.${ext}

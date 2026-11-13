@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'">
+  <title>RoleLeaf</title>
+  <link rel="stylesheet" href="desktop.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">↧</span><strong>RoleLeaf</strong></div>
+    <nav aria-label="Platforms">
+      <button type="button" data-platform="tipsy" aria-pressed="true">Tipsy</button>
+      <button type="button" data-platform="character_ai" aria-pressed="false">Character.AI</button>
+    </nav>
+    <button type="button" class="demo-tag" id="mode" aria-pressed="false">View demo</button>
+  </header>
+  <main>
+    <section class="chat" aria-label="Chat preview">
+      <div class="chat-header">
+        <span class="avatar large" id="current-avatar"></span>
+        <div><p class="eyebrow" id="site-label"></p><h1 id="current-name"></h1><p id="current-bio"></p></div>
+      </div>
+      <p class="chat-caption">Current chat preview</p>
+      <div id="messages" class="messages"></div>
+    </section>
+    <section class="site" aria-label="Source site" hidden>
+      <div class="site-tools">
+        <button type="button" id="back" aria-label="Back">←</button>
+        <button type="button" id="reload" aria-label="Reload page">↻</button>
+        <form id="address-form"><input id="address" aria-label="Source site or email verification link" placeholder="Site or email verification link" autocomplete="off" spellcheck="false"></form>
+      </div>
+    </section>
+    <aside class="panel" aria-labelledby="panel-title">
+      <p class="eyebrow">BOT EXPORTER DESKTOP</p>
+      <h2 id="panel-title">Export characters</h2>
+      <p class="hint">Each character gets a ZIP with its card, images, and current chat.</p>
+      <label class="search"><span class="sr-only">Search characters</span><input id="search" type="search" placeholder="Search characters"></label>
+      <div class="selection"><label><input id="select-all" type="checkbox"> Select all</label><span id="selected-count"></span></div>
+      <ul id="bots" class="bot-list" aria-label="Chat list"></ul>
+      <button type="button" id="refresh-bots" class="text-button">Refresh chat list</button>
+      <div class="actions"><button type="button" id="export" class="primary">Export</button><button type="button" id="stop" hidden>Stop queue</button></div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <p id="auth-fallback" class="auth-fallback" role="status" aria-live="polite" hidden></p>
+      <ul id="queue" class="queue" aria-label="Export results"></ul>
+      <button type="button" id="folder" class="text-button" hidden>Open export folder ↗</button>
+    </aside>
+  </main>
+  <script src="../tipsy-exporter/core.js"></script>
+  <script src="../tipsy-exporter/chat.js"></script>
+  <script src="../tipsy-exporter/png.js"></script>
+  <script src="../tipsy-exporter/bot-model.js"></script>
+  <script src="../tipsy-exporter/bot-package.js"></script>
+  <script src="../tipsy-exporter/collect-bot.js"></script>
+  <script src="demo.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

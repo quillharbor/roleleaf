@@ -1,0 +1,38 @@
+plugins { id 'com.android.application' }
+
+android {
+    signingConfigs {
+        debug { storeFile rootProject.file('.signing/debug.keystore') }
+    }
+    namespace 'io.github.quillharbor.roleleaf.test'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'io.github.quillharbor.roleleaf.test'
+        minSdk 26
+        targetSdk 35
+        versionCode 15
+        versionName '0.5.4-android.15'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildFeatures { buildConfig true }
+    sourceSets.main.assets.srcDirs += ['build/generated/assets']
+}
+
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
+
+tasks.register('syncExporterAssets', Sync) {
+    into layout.buildDirectory.dir('generated/assets')
+    from('../../tipsy-exporter') {
+        into 'shared'
+        include 'core.js', 'chat.js', 'png.js', 'bot-model.js', 'bot-package.js', 'collect-bot.js'
+        include 'page.bundle.js', 'bridge.bundle.js', 'cai-page.bundle.js', 'cai-bridge.bundle.js'
+    }
+    from('../../assets/brand/roleleaf-avatar-v1/roleleaf-anime-avatar.png') {
+        into 'brand'
+        rename { 'logo.png' }
+    }
+}
+tasks.named('preBuild').configure { dependsOn 'syncExporterAssets' }

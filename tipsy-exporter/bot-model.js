@@ -1,0 +1,28 @@
+(function(root){
+'use strict';
+const VERSION='0.5.4', CHANNEL='bot-exporter-v1';
+const str=v=>typeof v==='string'?v:'';
+const safe=v=>str(v).normalize('NFC').replace(/[\\/:*?"<>|\x00-\x1f\x7f]/g,'_').replace(/^[.\s]+|[.\s]+$/g,'').slice(0,90)||'bot';
+function route(url){try{const u=new URL(url);if(u.origin==='https://tipsy.chat'){const id=root.TipsyExporterCore.roleId(url);return id?{platform:'tipsy',id,url:u.origin+u.pathname}:null;}if(u.origin==='https://character.ai'){const id=u.pathname.match(/^\/chat\/([\w-]{6,100})(?:\/|$)/)?.[1];return id?{platform:'character_ai',id,url:u.origin+u.pathname}:null;}}catch{}return null;}
+function clean(v,depth=0){if(depth>25)throw Error('Data is nested too deeply');if(v===null||['string','boolean','number'].includes(typeof v))return v;if(Array.isArray(v))return v.map(x=>clean(x,depth+1));if(!v||typeof v!=='object')return null;const o={};for(const[k,x]of Object.entries(v))if(!/^(?:__proto__|constructor|prototype|authorization|cookie|cookies|set-cookie|token|access_token|refresh_token|password|email|headers|request)$/i.test(k))o[k]=clean(x,depth+1);return o;}
+function field(obj,key,source){const value=obj[key];return {value:value??null,status:value==null?'missing':typeof value==='string'?(value.trim()?'available':'empty'):'unmapped',source:source||key};}
+function caiCharacter(raw){const keys=['external_id','name','title','description','definition','greeting','additional_greetings','dynamic_greeting_enabled','allow_dynamic_greeting','avatar_file_name','avatar_url','background_image_url','visibility','copyable','has_definition','lorebook_id','tags','categories','user__username','participant__user__username','voice_id','default_voice_id'];const out={};for(const k of keys)if(Object.hasOwn(raw,k))out[k]=clean(raw[k]);if(!/^[\w-]{6,100}$/.test(out.external_id)||typeof out.name!=='string')throw Error('Invalid Character.AI character structure');return out;}
+function normalize(r,entry){
+ if(r.platform==='tipsy'){
+  const core=root.TipsyExporterCore,source=core.project(entry.source),c=source.character,a=core.report(entry);
+  if(c.character_id!==r.id)throw Error('The character changed');
+  return {schema:'bot_character_v1',platform:r.platform,id:r.id,name:c.nickname,source_url:r.url,captured_at:entry.capturedAt,fields:{name:field(c,'nickname'),description:field(c,'introduction'),definition:{value:core.background(source).value||null,status:core.background(source).state==='present'?'available':core.background(source).state,source:'character.background/public_background'},greeting:field(c,'greeting'),scenario:field(c,'scenario'),world_book:{value:source.world_books??c.world_books??null,status:a.world_books.state,source:'world_books'}},assets:[['avatar',c.face_url],['cover',c.image_url],['background',c.pc_image_url]].filter(x=>x[1]).map(([role,url])=>({role,url})),source,card:core.card(entry),warnings:a.warnings};
+ }
+ const c=caiCharacter(entry.character);if(c.external_id!==r.id)throw Error('The character changed');
+ const fields={};for(const[k,v]of Object.entries({name:'name',tagline:'title',description:'description',definition:'definition',greeting:'greeting',alternate_greetings:'additional_greetings',tags:'tags',visibility:'visibility',voice:'voice_id'}))fields[k]=field(c,v,`character.${v}`);
+ if(Array.isArray(c.additional_greetings))fields.alternate_greetings.status=c.additional_greetings.length?'available':'empty';
+ fields.world_book={value:null,status:c.lorebook_id?'metadata_only':'missing',source:'character.lorebook_id',id:c.lorebook_id??null};
+ const warnings=[];if(fields.definition.status!=='available')warnings.push(c.has_definition?'The source indicates a definition exists, but its text was unavailable.':'No definition text was available. The full character definition is unverified.');warnings.push('Lorebook text is unverified. The chat greeting and author-configured greeting are preserved separately.');
+ const card={spec:'chara_card_v2',spec_version:'2.0',data:{name:c.name,description:str(c.description),personality:str(c.definition),scenario:'',first_mes:str(c.greeting),mes_example:'',creator_notes:warnings.join('\n'),system_prompt:'',post_history_instructions:'',alternate_greetings:Array.isArray(c.additional_greetings)?c.additional_greetings.filter(x=>typeof x==='string'):[],tags:root.TipsyExporterCore.tagNames(c.tags),creator:str(c.user__username||c.participant__user__username),character_version:'',extensions:{character_ai:{source:c,source_url:r.url,definition_mapping:'Full definition preserved once in personality; no inferred split.'}}}};
+ const assets=[['avatar',c.avatar_url],['background',c.background_image_url]].filter(x=>x[1]).map(([role,url])=>({role,url}));
+ return {schema:'bot_character_v1',platform:r.platform,id:r.id,name:c.name,source_url:r.url,captured_at:entry.capturedAt,fields,assets,source:{character:c},card,warnings};
+}
+function tipsyMessages(data){return {schema:'bot_messages_v1',id:data.source.conversation_id||'current',scope:'current_conversation',completeness:data.completeness,messages:data.records.map(m=>({id:m.sequence,role:m.sender_type,content:m.content,content_type:m.content_type,timestamp:m.timestamp??null,candidates:[],selected_candidate_id:null,source:clean(m)})),source_pages:data.pages};}
+function transcript(c){return ['Current chat thread. See report.json for missing content and reply candidate coverage.',...c.messages.map(m=>`[${m.id}] ${m.role} | ${m.timestamp??'Unknown'}\n${m.content_type==='text'?(m.content??'[Selected reply unknown. See the JSON.]'):'[Non-text event. See the JSON.]'}`)].join('\n\n');}
+root.BotModel=Object.freeze({VERSION,CHANNEL,str,safe,route,clean,field,caiCharacter,normalize,tipsyMessages,transcript});
+})(globalThis);

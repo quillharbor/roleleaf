@@ -1,0 +1,31 @@
+{
+  "name": "roleleaf",
+  "version": "0.5.4",
+  "private": true,
+  "description": "Export AI character data and conversations, with explicit provenance and completeness.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "preview": "node tests/preview.cjs",
+    "package": "npm run build && node scripts/package.cjs",
+    "desktop:start": "npm start --prefix desktop",
+    "desktop:check-release": "node scripts/desktop-release.cjs check",
+    "package:desktop:test": "node scripts/desktop-release.cjs test",
+    "package:desktop:release": "node scripts/desktop-release.cjs release",
+    "package:android:test": "node scripts/package-android.cjs"
+  },
+  "devDependencies": {
+    "@electron/asar": "3.4.1",
+    "electron-builder": "26.18.0"
+  },
+  "license": "UNLICENSED",
+  "author": "quillharbor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quillharbor/roleleaf.git"
+  },
+  "homepage": "https://github.com/quillharbor/roleleaf"
+}
