@@ -12,7 +12,7 @@ RoleLeaf exports character profiles, images and the current conversation from Ti
 | macOS desktop | macOS 13+, Apple Silicon for the reviewed DMG | Open the test DMG and drag RoleLeaf to Applications |
 | Android | Android 8+ | Install the test APK; keep Android System WebView current |
 
-See the [installation guide](docs/installation.md), [privacy notes](PRIVACY.md) and [validation record](tests/VALIDATION.md). Candidate downloads will be attached to this repository's private release after verification.
+Download the three test installers and `SHA256SUMS` from the [private draft release](https://github.com/quillharbor/roleleaf/releases). Sign in with an account that has repository access. See the [installation guide](docs/installation.md), [privacy notes](PRIVACY.md) and [validation record](tests/VALIDATION.md).
 
 ## Use
 

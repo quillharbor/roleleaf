@@ -13,6 +13,10 @@ This record covers the independent 0.5.4 private review candidate. Results are r
 
 Artifact sizes and hashes are recorded in `docs/releases/current.json`.
 
+## Private upload verified on 2026-11-16
+
+The three installers and `SHA256SUMS` were uploaded to draft release `v0.5.4-review.1`. GitHub's reported byte sizes and SHA-256 digests match the local files. The repository is private and the release remains a draft; the license decision is still pending. Uploading these existing artifacts does not add any new live-service or clean-device test coverage.
+
 ## Scope
 
 Tests use synthetic fixtures. The originally reported long Tipsy conversation has not been retested live. Clean-device installation, account login, export and upgrade checks remain pending. No Developer ID notarization, production Android signing, or store publication is implied.
