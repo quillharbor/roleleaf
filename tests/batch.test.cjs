@@ -62,7 +62,7 @@ test('Tipsy mobile recent cards use stable ids and exclude previews and delete a
  env.location=new URL('https://tipsy.chat/');assert.equal(env.BotSidebar.read().found,false);
 });
 
-function queueFixture({ stopAfterFirst = false } = {}) {
+function queueFixture({ stopAfterFirst = false, partialFirst = false } = {}) {
   const key = 'batch:12345678-abcd-4000-8000-123456789012';
   const bots = ['100000001', '100000002', '100000003'].map(id => ({
     id, url: `https://tipsy.chat/chat/${id}?session=keep`, name: id,
@@ -77,7 +77,7 @@ function queueFixture({ stopAfterFirst = false } = {}) {
     if (!nodes.has(id)) nodes.set(id, element());
     return nodes.get(id);
   };
-  let nextWorker = 1, workerOpen = false, failed = false;
+  let nextWorker = 1, workerOpen = false, failed = false, firstAttempts = 0;
   const env = vm.createContext({
     URL, AbortController, window: { addEventListener() {} },
     location: { href: `https://extension.test/collector.html?tab=1&batch=${key.slice(6)}` },
@@ -113,7 +113,12 @@ function queueFixture({ stopAfterFirst = false } = {}) {
       operations.push(['collect', route.id, worker, tabId]);
       assert.equal(signal.aborted, false);
       onCharacter(route.id);
-      return { filename: `${route.id}.zip`, images: 1, imageCount: 1, messages: 3, partial: false };
+      const attempt = route.id === bots[0].id ? ++firstAttempts : 0;
+      if (partialFirst && attempt === 2) throw Error('synthetic retry failure');
+      const partial = partialFirst && attempt === 1;
+      return { filename: `${route.id}.zip`, images: 1, imageCount: 1, messages: 3, partial,
+        partialReason: partial ? 'The chat page did not request earlier messages.' : undefined };
+
     },
     saveBot: async (output, { folder, saveAs }) => {
       assert.equal(saveAs, false);
@@ -157,4 +162,22 @@ test('stopping a batch keeps the completed download and skips unopened Bots', as
   assert.equal(node('progress').textContent, 'Queue stopped.');
   assert.equal(node('retry').hidden, false);
   assert.deepEqual(operations.map(([action]) => action), ['open', 'collect', 'save', 'close']);
+});
+
+test('retrying one partial download retains the original result if the retry fails', async () => {
+  const { node, operations } = queueFixture({ partialFirst: true });
+  await until(() => node('summary').textContent === 'Saved: 2 · Failed: 1 · Skipped: 0');
+  const row = () => node('queue').children[0].children;
+  assert.match(row()[2].textContent, /did not request earlier messages/);
+  assert.equal(row()[3].disabled, false);
+  const beforeRetry = operations.length;
+  await row()[3].onclick();
+  assert.equal(row()[1].textContent, 'Saved · Partial');
+  assert.match(row()[2].textContent, /synthetic retry failure/);
+  assert.deepEqual(operations.slice(beforeRetry).map(([action]) => action), ['open', 'collect', 'close']);
+  await row()[3].onclick();
+  assert.equal(row()[1].textContent, 'Saved');
+  assert.equal(row().length, 3);
+  assert.deepEqual(operations.filter(([action]) => action === 'collect').map(([,id]) => id),
+    ['100000001', '100000002', '100000003', '100000001', '100000001']);
 });

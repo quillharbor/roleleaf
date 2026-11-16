@@ -22,3 +22,7 @@ English, Arabic, Japanese, Korean, and Traditional Chinese. English is the defau
 ## Android toolbar .24
 
 Both Android builds passed 69 Node tests, assembly, lint, and signature verification. The signer matched the previous package for each channel. The internal build upgraded over .23 on the USB phone. The top-bar overflow displayed Open ZIP and opened the five-language picker. Public Pages files and package hashes were verified using anonymous downloads. This Android-only update retains the existing Chrome and macOS builds.
+
+## Tipsy history and retry in 0.5.9
+
+73 automated tests passed. After a simulated virtual list remount, pagination recovered records 1–16 from an initial page of records 17–26. No-request and in-flight timeout cases keep the available history and report distinct outcomes. Chrome batch retries only the selected partial row. A failed retry preserves the prior saved result. The original live conversation has not been retested.

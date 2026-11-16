@@ -138,6 +138,15 @@ function renderBatch() {
     state.textContent = t(statuses[bot.status]);
     detail.textContent = t(bot.detail);
     row.append(label, state, detail);
+    if (bot.status === 'partial') {
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'queue-retry';
+      retry.textContent = t('Retry this character');
+      retry.disabled = working;
+      retry.onclick = () => runBatch([bot]);
+      row.append(retry);
+    }
     return row;
   });
   $('queue').replaceChildren(...rows);
@@ -151,6 +160,7 @@ async function closeWorker() {
 }
 
 async function runBot(bot) {
+  const previousPartial = bot.status === 'partial' ? bot.savedDetail : null;
   bot.status = 'running';
   bot.detail = job.creator ? 'Opening character editor…' : 'Opening chat…';
   renderBatch();
@@ -181,19 +191,26 @@ async function runBot(bot) {
     await saveBot(output, { folder: job.folder, saveAs: false });
     bot.status = output.partial ? 'partial' : 'saved';
     bot.detail = job.creator ? t("Images: {saved} of {total} · Creator settings", { saved: output.images, total: output.imageCount }) : counts(output);
+    if (output.partial && output.partialReason) bot.detail += ' · ' + t(output.partialReason);
+    bot.savedDetail = bot.detail;
   } catch (error) {
     bot.status = controller.signal.aborted && error === controller.signal.reason ? 'skipped' : 'failed';
     bot.detail = bot.status === 'skipped' ? 'Export stopped.' : error.message || 'Export failed.';
+    if (previousPartial !== null) {
+      bot.status = 'partial';
+      bot.detail = previousPartial + ' · ' + t('Retry failed: {reason}', { reason: t(bot.detail) });
+    }
   } finally {
     await closeWorker();
     renderBatch();
   }
 }
 
-async function runBatch() {
+async function runBatch(pending = job.bots.filter(bot => ['pending', 'failed', 'skipped'].includes(bot.status))) {
   if (!startTask()) return;
-  const pending = job.bots.filter(bot => ['pending', 'failed', 'skipped'].includes(bot.status));
-  for (const bot of pending) Object.assign(bot, { status: 'pending', detail: '' });
+  for (const bot of pending) {
+    if (bot.status !== 'partial') Object.assign(bot, { status: 'pending', detail: '' });
+  }
   renderBatch();
   for (const [index, bot] of pending.entries()) {
     if (controller.signal.aborted) break;
@@ -209,8 +226,8 @@ async function runBatch() {
   const skipped = job.bots.filter(bot => bot.status === 'skipped').length;
   showProgress(controller.signal.aborted ? 'Queue stopped.' : 'Queue finished.');
   $('summary').textContent = t("Saved: {saved} · Failed: {failed} · Skipped: {skipped}", { saved, failed, skipped });
-  renderBatch();
   finishTask(failed + skipped > 0);
+  renderBatch();
 }
 
 $('stop').onclick = () => {
@@ -229,7 +246,7 @@ if (batchId) {
   $('batch').hidden = false;
   $('stop').textContent = t('Stop queue');
   $('retry').textContent = t('Retry failed or skipped items');
-  $('retry').onclick = runBatch;
+  $('retry').onclick = () => runBatch();
   loadBatch().then(loaded => {
     job = loaded;
     if (job.creator) $('name').textContent = t('My Characters export');

@@ -4,7 +4,7 @@ English · [العربية](docs/readme/ar.md) · [日本語](docs/readme/ja.md)
 
 Keep a local copy of your AI characters and conversations from Tipsy and Character.AI.
 
-**Demo 0.5.8 · Android and Chrome · No app-store release.**
+**Demo 0.5.9 · Android and Chrome · No app-store release.**
 
 | Platform | Requirements | Install |
 | --- | --- | --- |

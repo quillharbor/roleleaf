@@ -47,3 +47,5 @@
 
 #language { font: inherit; color: inherit; background: #272839; border: 1px solid #4a4c61; border-radius: 7px; padding: 5px 8px; margin-block: 0 8px; }
 [dir=rtl] h1,[dir=rtl] .eyebrow { letter-spacing: normal; }
+
+#queue .queue-retry { grid-column: 1 / -1; justify-self: start; }

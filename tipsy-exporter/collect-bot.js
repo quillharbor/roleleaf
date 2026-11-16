@@ -220,6 +220,7 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
       conversations: conversations.length,
       images: media.assets.filter(asset => asset.status === 'saved').length,
       imageCount: media.assets.length,
+      partialReason: output.report.chats.conversations?.find(conversation => conversation.error)?.error,
       partial: output.report.chats.status !== 'captured_mainlines_complete' ||
         output.report.images.status === 'partial' || output.report.stopped ||
         model.assets.length > media.assets.length,

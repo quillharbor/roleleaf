@@ -1,13 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const id='9000000000000000002',url='https://api.tipsy.chat/api/v1/chat/history';
 const sleep=()=>new Promise(r=>setTimeout(r,40));
-function setup(scroller=null, mobile=false, desktop=scroller){
+function setup(scroller=null, mobile=false, desktop=scroller, timers={}){
  const messages=[],listeners=[],queue=[];let runtimeListener=[];
  const location={origin:'https://tipsy.chat',href:`https://tipsy.chat/chat/${id}`};
  const win={addEventListener:(n,fn)=>listeners.push(fn),postMessage:m=>{messages.push(m);queueMicrotask(()=>listeners.forEach(fn=>fn({source:win,origin:location.origin,data:m})));},fetch:()=>queue.shift()};
  class XHR{open(){}send(){}}
  const shared={URL,TextEncoder,TextDecoder,Uint8Array,setTimeout,clearTimeout,window:win,location,XMLHttpRequest:XHR,
- document:{querySelectorAll:()=>mobile?[{parentElement:scroller,getAttribute:()=>null}]:[],querySelector:()=>desktop},
+ ...timers,document:{querySelectorAll:()=>mobile?[{parentElement:typeof scroller==='function'?scroller():scroller,getAttribute:()=>null}]:[],querySelector:()=>desktop},
  getComputedStyle:el=>({overflowY:el.overflowY||'visible'}),crypto:require('node:crypto').webcrypto,
  chrome:{runtime:{id:'test',onMessage:{addListener:fn=>runtimeListener.push(fn)}}}};
  const main=vm.createContext({...shared}),isolated=vm.createContext({...shared});
@@ -99,3 +99,69 @@ test('automatic scrolling collects older pages; popup commands can cancel a runn
  await fresh.win.fetch(url,{body:JSON.stringify({character_id:id,sequence:'0'})});await sleep();
  await fresh.command('start');assert.equal((await fresh.command('cancel')).status.running,false);assert.equal((await fresh.command('export')).status.complete_current_mainline,false);
 });
+
+function fastClock() {
+ let now = Date.now();
+ return {
+  Date: class extends Date { static now() { return now; } },
+  setTimeout: (fn, ms) => setTimeout(() => { now += ms; fn(); }, 1),
+ };
+}
+
+async function collected(e) {
+ for (let i = 0; i < 40; i++) {
+  const out = await e.command('export');
+  if (!out.status.running) return out;
+  await sleep();
+ }
+ assert.fail('History collection did not settle');
+}
+
+test('pagination finds the replacement scroller after no older request arrives', async () => {
+ let e, current, opened = 0;
+ function list(onTop) {
+  let position = 0;
+  return {isConnected:true, clientHeight:200, scrollHeight:1000, overflowY:'auto', parentElement:null,
+   get scrollTop() { return position; },
+   set scrollTop(value) { position = value; if (!value) onTop(); },
+  };
+ }
+ const second = list(() => {
+  if (++opened !== 1) return;
+  void page(e, '16', Array.from({length:16}, (_,i) => message(i+1)));
+ });
+ current = list(() => { current.isConnected = false; current = second; });
+ e = setup(() => current, true, null, fastClock());
+ await page(e, '0', Array.from({length:10}, (_,i) => message(i+17)));
+ await e.command('start');
+ const out = await collected(e);
+ assert.equal(out.status.complete_current_mainline, true);
+ assert.equal(out.status.records, 26);
+ assert.equal(opened, 1);
+});
+
+for (const requested of [false, true]) {
+ test(requested ? 'a pending older request is not retriggered and has its own timeout' : 'a missing older request has its own diagnostic', async () => {
+  let position = 800, triggers = 0, e;
+  const scroller = {isConnected:true, clientHeight:200, scrollHeight:1000,
+   get scrollTop() { return position; },
+   set scrollTop(value) {
+    position = value;
+    if (value) return;
+    triggers++;
+    if (requested && triggers === 1) {
+     e.queue.push(new Promise(() => {}));
+     e.win.fetch(url,{body:JSON.stringify({character_id:id,sequence:'16'})});
+    }
+   },
+  };
+  e = setup(scroller, false, scroller, fastClock());
+  await page(e, '0', [message(17), message(18)]);
+  await e.command('start');
+  const out = await collected(e);
+  assert.equal(out.status.records, 2);
+  assert.equal(out.status.complete_current_mainline, false);
+  assert.equal(triggers, requested ? 1 : 3);
+  assert.match(out.status.error, requested ? /Timed out waiting.*response/ : /did not request earlier messages/);
+ });
+}
