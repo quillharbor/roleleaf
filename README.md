@@ -15,10 +15,10 @@ Keep a local copy of your AI characters and conversations from Tipsy and Charact
 
 ## Use
 
-RoleLeaf opens in English. On Android, choose a language at the bottom of the app. In Chrome, use the language menu in the extension popup.
+RoleLeaf opens in English. On Android, tap **⋮ → Language** in the toolbar. In Chrome, use the language menu in the extension popup.
 
 1. Sign in to a supported source site in Chrome or the Android app.
-2. Open Batch Export, choose Recent or My Characters, select characters and start exporting.
+2. Open **Export** on Android or the extension in Chrome, choose Recent or My Characters, select characters and start exporting.
 3. Keep the app or source tabs open. Extract the saved ZIP and open `README.html`.
 
 Creator backups and current-conversation exports have different coverage. Missing fields and incomplete history are reported; a successful ZIP does not guarantee a complete account backup.

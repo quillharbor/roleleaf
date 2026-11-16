@@ -2,6 +2,8 @@
 <resources>
     <string name="browser_back">رجوع</string>
     <string name="browser_reload">أعد تحميل الصفحة</string>
+    <string name="ui_more">خيارات أخرى</string>
+    <string name="ui_export">تصدير</string>
     <string name="ui_language">اللغة</string>
     <string name="ui_open_zip">افتح ZIP</string>
     <string name="ui_batch">تصدير دفعة واحدة</string>

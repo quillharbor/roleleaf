@@ -14,14 +14,14 @@
   "artifacts": [
     {
       "platform": "android",
-      "version": "0.5.8-demo.23",
-      "path": "android/release/0.5.8-demo.23/RoleLeaf-DEMO-0.5.8-demo.23.apk",
-      "filename": "RoleLeaf-DEMO-0.5.8-demo.23.apk",
-      "bytes": 4400944,
-      "sha256": "6c6c9f48a90feaf88e3a5f222535e3c24ef9054d4f2cd2ec26bbf65b871a2c7b",
+      "version": "0.5.8-demo.24",
+      "path": "android/release/0.5.8-demo.24/RoleLeaf-DEMO-0.5.8-demo.24.apk",
+      "filename": "RoleLeaf-DEMO-0.5.8-demo.24.apk",
+      "bytes": 4402376,
+      "sha256": "57a900c65bba0e79c95f072b2837288a5e3488bbd3d24e6f8178f30996951bce",
       "minimum": "Android 8+",
       "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 23,
+      "version_code": 24,
       "signing": "fixed demo release key",
       "debuggable": false,
       "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f",
@@ -30,7 +30,9 @@
       "checks": [
         "69 Node tests",
         "assembleRelease and lintRelease",
-        "APK CRC, bundled assets, and APK v2 signature"
+        "APK CRC, bundled assets, and APK v2 signature",
+        "v23 signing certificate retained",
+        "Native more menu for Language and Open ZIP"
       ]
     },
     {
@@ -69,7 +71,8 @@
     "69 Node tests",
     "Android assembleRelease, lintRelease and fixed signing certificate",
     "APK and ZIP CRC, source-to-package assets",
-    "DMG, ASAR and ad-hoc signature checked by packaging script"
+    "DMG, ASAR and ad-hoc signature checked by packaging script",
+    "Android Demo .24 build and lint passed; signing certificate retained; published download verified"
   ],
   "not_verified": [
     "Live source-account acceptance for 0.5.8",

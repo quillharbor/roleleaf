@@ -23,6 +23,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -69,7 +70,7 @@ public class MainActivity extends Activity {
     private LinearLayout browser;
     private LinearLayout platforms;
     private Button tipsyButton, caiButton, exportButton;
-    private Button browserBack, browserReload, openZipButton, languageButton;
+    private Button browserBack, browserReload, moreButton;
     private static final String[] UI_LOCALES = {"en", "ar", "ja", "ko", "zh-Hant"};
     private static final String[] UI_LANGUAGE_NAMES = {"English", "العربية", "日本語", "한국어", "繁體中文"};
     private String uiLanguage = "en";
@@ -123,16 +124,28 @@ public class MainActivity extends Activity {
     }
 
     private void updateLanguageControls() {
-        int selected = Arrays.asList(UI_LOCALES).indexOf(uiLanguage);
-        languageButton.setText(UI_LANGUAGE_NAMES[selected]);
-        languageButton.setContentDescription(uiText(R.string.ui_language));
-        openZipButton.setText(uiText(R.string.ui_open_zip));
-        exportButton.setText(uiText(R.string.ui_batch));
+        moreButton.setContentDescription(uiText(R.string.ui_more));
+        exportButton.setText(uiText(R.string.ui_export));
+        exportButton.setContentDescription(uiText(R.string.ui_batch));
         browserBack.setContentDescription(uiText(R.string.browser_back));
         browserReload.setContentDescription(uiText(R.string.browser_reload));
         browser.setLayoutDirection("ar".equals(uiLanguage) ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         browserBack.setText("ar".equals(uiLanguage) ? "→" : "←");
         browserHost.setTextDirection(View.TEXT_DIRECTION_LTR);
+    }
+
+    private void showMoreMenu() {
+        if (pickerOpen || busy) return;
+        PopupMenu menu = new PopupMenu(this, moreButton, android.view.Gravity.END);
+        menu.getMenu().add(uiText(R.string.ui_language)).setOnMenuItemClickListener(item -> {
+            chooseLanguage();
+            return true;
+        });
+        menu.getMenu().add(uiText(R.string.ui_open_zip)).setOnMenuItemClickListener(item -> {
+            chooseZip();
+            return true;
+        });
+        menu.show();
     }
 
     private void chooseLanguage() {
@@ -180,8 +193,6 @@ public class MainActivity extends Activity {
         platforms = row();
         tipsyButton = button("Tipsy", () -> switchSite("tipsy")); caiButton = button("Character.AI", () -> switchSite("character_ai"));
         equal(platforms,tipsyButton); equal(platforms,caiButton);
-        languageButton = button("", this::chooseLanguage);
-        equal(platforms,languageButton);
         LinearLayout toolbar = row();
         toolbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
         browserBack = navigationButton("←", R.string.browser_back, this::goBackInBrowser);
@@ -192,19 +203,22 @@ public class MainActivity extends Activity {
         browserHost.setSingleLine(true);
         browserHost.setEllipsize(TextUtils.TruncateAt.END);
         browserHost.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        browserHost.setPadding(dp(8),0,dp(6),0);
+        browserHost.setPaddingRelative(dp(8),0,dp(6),0);
         toolbar.addView(browserHost, new LinearLayout.LayoutParams(0,dp(44),1));
         browserReload = navigationButton("↻", R.string.browser_reload, this::reloadBrowser);
         LinearLayout.LayoutParams reloadParams = new LinearLayout.LayoutParams(dp(44),dp(44));
         reloadParams.setMarginEnd(dp(6));
         toolbar.addView(browserReload,reloadParams);
-        openZipButton = button("", this::chooseZip);
-        LinearLayout.LayoutParams openParams = new LinearLayout.LayoutParams(-2,dp(44));
-        openParams.setMarginEnd(dp(6));
-        toolbar.addView(openZipButton,openParams);
         exportButton = button("", this::openPicker);
+        exportButton.setSingleLine(true);
+        exportButton.setEllipsize(TextUtils.TruncateAt.END);
+        exportButton.setMaxWidth(dp(120));
         paintButton(exportButton,true);
         toolbar.addView(exportButton,new LinearLayout.LayoutParams(-2,dp(44)));
+        moreButton = navigationButton("⋮", R.string.ui_more, this::showMoreMenu);
+        LinearLayout.LayoutParams moreParams = new LinearLayout.LayoutParams(dp(44),dp(44));
+        moreParams.setMarginStart(dp(6));
+        toolbar.addView(moreButton,moreParams);
         browser.addView(toolbar);
         content = new FrameLayout(this); browser.addView(content, new LinearLayout.LayoutParams(-1,0,1));
         browser.addView(platforms);

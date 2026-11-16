@@ -2,6 +2,8 @@
 <resources>
     <string name="browser_back">戻る</string>
     <string name="browser_reload">ページを再読み込み</string>
+    <string name="ui_more">その他のオプション</string>
+    <string name="ui_export">書き出す</string>
     <string name="ui_language">言語</string>
     <string name="ui_open_zip">ZIP を開く</string>
     <string name="ui_batch">一括エクスポート</string>

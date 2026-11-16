@@ -22,14 +22,14 @@
   "artifacts": [
     {
       "platform": "android",
-      "version": "0.5.8-demo.23",
-      "path": "android/release/0.5.8-demo.23/RoleLeaf-DEMO-0.5.8-demo.23.apk",
-      "filename": "RoleLeaf-DEMO-0.5.8-demo.23.apk",
-      "bytes": 4400944,
-      "sha256": "6c6c9f48a90feaf88e3a5f222535e3c24ef9054d4f2cd2ec26bbf65b871a2c7b",
+      "version": "0.5.8-demo.24",
+      "path": "android/release/0.5.8-demo.24/RoleLeaf-DEMO-0.5.8-demo.24.apk",
+      "filename": "RoleLeaf-DEMO-0.5.8-demo.24.apk",
+      "bytes": 4402376,
+      "sha256": "57a900c65bba0e79c95f072b2837288a5e3488bbd3d24e6f8178f30996951bce",
       "minimum": "Android 8+",
       "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 23,
+      "version_code": 24,
       "signing": "fixed demo release key",
       "debuggable": false,
       "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f",
@@ -38,7 +38,9 @@
       "checks": [
         "69 Node tests",
         "assembleRelease and lintRelease",
-        "APK CRC, bundled assets, and APK v2 signature"
+        "APK CRC, bundled assets, and APK v2 signature",
+        "v23 signing certificate retained",
+        "Native more menu for Language and Open ZIP"
       ]
     },
     {
@@ -61,46 +63,43 @@
   "hosting": "github-pages-branch",
   "publication_authorized": true,
   "checks": [
-    "69 Node tests",
-    "Android assembleRelease, lintRelease and fixed signing certificate",
-    "APK and ZIP CRC, source-to-package assets",
-    "Five-language Chrome UI and mobile download-page browser checks",
-    "Anonymous live download and Pages QR SHA-256 verification"
+    "Android .24 assembly, lint, 69 Node tests, APK CRC and signer continuity; Chrome 0.5.8 ZIP retained.",
+    "Live Pages files and anonymous APK and ZIP downloads matched verified digests."
   ],
   "not_verified": [
     "Live source-account acceptance for 0.5.8"
   ],
-  "release_id": 446851880,
-  "release_url": "https://github.com/quillharbor/roleleaf-demo/releases/tag/v0.5.8-demo",
-  "pages_commit": "f14ee7278420056c72f1ab5d9f7c4e0d96bce774",
+  "anonymous_download_verified": true,
+  "qr_status": "published_and_verified",
+  "deployment_source": "main:/docs",
+  "locale_reference": "https://apps.apple.com/us/app/popia-ai-stories-creators/id6757948021",
+  "release_id": 446921603,
+  "release_url": "https://github.com/quillharbor/roleleaf-demo/releases/tag/v0.5.8-demo.24",
+  "pages_commit": "3d16e577305b9490acadf820162af30b9fd02b4a",
   "assets_verified": [
     {
       "name": "RoleLeaf-0.5.8.zip",
       "bytes": 350025,
       "sha256": "sha256:7112228be7ee17a7fe2ce3513f3882ede12ae72e44210fdad2133fbad2627b0f",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.8-demo/RoleLeaf-0.5.8.zip"
+      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.8-demo.24/RoleLeaf-0.5.8.zip"
     },
     {
-      "name": "RoleLeaf-DEMO-0.5.8-demo.23.apk",
-      "bytes": 4400944,
-      "sha256": "sha256:6c6c9f48a90feaf88e3a5f222535e3c24ef9054d4f2cd2ec26bbf65b871a2c7b",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.8-demo/RoleLeaf-DEMO-0.5.8-demo.23.apk"
+      "name": "RoleLeaf-DEMO-0.5.8-demo.24.apk",
+      "bytes": 4402376,
+      "sha256": "sha256:57a900c65bba0e79c95f072b2837288a5e3488bbd3d24e6f8178f30996951bce",
+      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.8-demo.24/RoleLeaf-DEMO-0.5.8-demo.24.apk"
     },
     {
       "name": "SHA256SUMS",
       "bytes": 183,
-      "sha256": "sha256:eae64e257f8226da4ba5c01b030855b102a51ac08a62571acc2bcd2dd813f50e",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.8-demo/SHA256SUMS"
+      "sha256": "sha256:303a4ff3218ddcd10ac22cff093387378352b3a57d285d72ec2012c754547c1e",
+      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.8-demo.24/SHA256SUMS"
     }
   ],
-  "anonymous_download_verified": true,
-  "qr_status": "published_and_verified",
-  "published_at": "2026-11-16T17:56:36+08:00",
-  "deployment_source": "main:/docs",
-  "locale_reference": "https://apps.apple.com/us/app/popia-ai-stories-creators/id6757948021",
+  "published_at": "2026-11-16T19:02:58+08:00",
   "hosting_bundle": {
-    "path": "dist/RoleLeaf-demo-0.5.8-github-pages-published.zip",
-    "bytes": 5979441,
-    "sha256": "b7f5686735df248775b225704baa9039d0f84f1ca635abab50a40eb8e7e18e05"
+    "path": "dist/RoleLeaf-demo-0.5.8-android.24-github-pages.zip",
+    "bytes": 5979920,
+    "sha256": "e67bd74d76dd2f2f706923cfea12e82b07caa58cfd6972dd2e6de90551680cc3"
   }
 }

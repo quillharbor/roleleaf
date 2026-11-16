@@ -2,6 +2,8 @@
 <resources>
     <string name="browser_back">返回</string>
     <string name="browser_reload">重新載入頁面</string>
+    <string name="ui_more">更多選項</string>
+    <string name="ui_export">匯出</string>
     <string name="ui_language">語言</string>
     <string name="ui_open_zip">開啟 ZIP</string>
     <string name="ui_batch">批次匯出</string>
