@@ -18,7 +18,10 @@ for (const artifact of record.artifacts) {
 for (const file of ['index.html', 'style.css', 'app.js', 'messages.js']) if (!fs.existsSync(path.join(source, file))) throw Error('Missing site file: ' + file);
 fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(path.join(output, 'files'), { recursive: true });
-for (const file of ['index.html', 'style.css', 'app.js', 'messages.js']) fs.copyFileSync(path.join(source, file), path.join(output, file));
+for (const file of ['style.css', 'app.js', 'messages.js']) fs.copyFileSync(path.join(source, file), path.join(output, file));
+const indexHTML = fs.readFileSync(path.join(source, 'index.html'), 'utf8');
+fs.writeFileSync(path.join(output, 'index.html'),
+  indexHTML.replace('src="release.js"', `src="release.js?v=${encodeURIComponent(record.version)}"`));
 fs.copyFileSync(path.join(root, 'tipsy-exporter/i18n.js'), path.join(output, 'i18n.js'));
 fs.copyFileSync(path.join(root, 'assets/brand/roleleaf-avatar-v1/roleleaf-anime-avatar.png'), path.join(output, 'logo.png'));
 // The Pages workflow supplies its verified deployment URL and matching QR.
