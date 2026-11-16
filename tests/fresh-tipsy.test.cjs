@@ -18,7 +18,7 @@ function setup({ differentConversation = false, missingLatest = false } = {}) {
     setTimeout: (fn, ms) => setTimeout(fn, Math.min(ms, 1)), clearTimeout,
     window: { addEventListener() {} },
     location: { href: 'https://extension.test/collector.html?tab=1' },
-    document: { getElementById: node },
+    document: { documentElement: {}, querySelectorAll: () => [], getElementById: node },
     chrome: {
       runtime: { getManifest: () => ({ version: 'test' }) },
       tabs: {
@@ -47,7 +47,7 @@ function setup({ differentConversation = false, missingLatest = false } = {}) {
     } },
     recordSaved: output => saved.push(output),
   });
-  for (const file of ['core', 'bot-model', 'collect-bot']) {
+  for (const file of ['i18n', 'messages', 'core', 'bot-model', 'collect-bot']) {
     vm.runInContext(fs.readFileSync(`tipsy-exporter/${file}.js`, 'utf8'), env);
   }
   vm.runInContext('saveBot = async output => recordSaved(output)', env);

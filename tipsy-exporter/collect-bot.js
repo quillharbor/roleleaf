@@ -107,7 +107,7 @@ async function collectImages(model, signal, progress, warnings, downloadImage) {
   if (model.assets.length > limit) warnings.push('Only the first 100 images were processed. Original references remain in the character or message data.');
 
   for (const asset of model.assets.slice(0, limit)) {
-    progress(`Images processed: ${assets.length} of ${limit}`);
+    progress(globalThis.RoleLeafI18n?.t('Images processed: {count} of {total}', { count: assets.length, total: limit }) ?? `Images processed: ${assets.length} of ${limit}`);
     const record = { ...asset, status: 'failed', path: null };
     assets.push(record);
     if (signal.aborted) {
@@ -178,7 +178,7 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
     let conversationId = state.conversation_id || null;
     const deadline = Date.now() + 610000;
     while (state.running && !stopped) {
-      progress(`${state.records || 0} messages collected. Loading earlier messages…`);
+      progress(globalThis.RoleLeafI18n?.t('Collected {count} messages. Loading earlier messages…', { count: state.records || 0 }) ?? `${state.records || 0} messages collected. Loading earlier messages…`);
       await collectionDelay(800);
       state = (await command('status')).status;
       if (conversationId && state.conversation_id && conversationId !== state.conversation_id) {

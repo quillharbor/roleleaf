@@ -81,7 +81,7 @@ function queueFixture({ stopAfterFirst = false } = {}) {
   const env = vm.createContext({
     URL, AbortController, window: { addEventListener() {} },
     location: { href: `https://extension.test/collector.html?tab=1&batch=${key.slice(6)}` },
-    document: { getElementById: node, createElement: element },
+    document: { documentElement: {}, querySelectorAll: () => [], getElementById: node, createElement: element },
     chrome: {
       runtime: { getManifest: () => ({ version: '0.5.0' }) },
       tabs: {
@@ -126,7 +126,7 @@ function queueFixture({ stopAfterFirst = false } = {}) {
       }
     },
   });
-  load(env, 'core', 'bot-model', 'collector');
+  load(env, 'i18n', 'messages', 'core', 'bot-model', 'collector');
   return { bots, node, operations };
 }
 

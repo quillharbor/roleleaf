@@ -15,10 +15,11 @@ for (const artifact of record.artifacts) {
   const data = fs.readFileSync(full);
   if (data.length !== artifact.bytes || createHash('sha256').update(data).digest('hex') !== artifact.sha256) throw Error('Artifact verification failed: ' + artifact.platform);
 }
-for (const file of ['index.html', 'style.css', 'app.js']) if (!fs.existsSync(path.join(source, file))) throw Error('Missing site file: ' + file);
+for (const file of ['index.html', 'style.css', 'app.js', 'messages.js']) if (!fs.existsSync(path.join(source, file))) throw Error('Missing site file: ' + file);
 fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(path.join(output, 'files'), { recursive: true });
-for (const file of ['index.html', 'style.css', 'app.js']) fs.copyFileSync(path.join(source, file), path.join(output, file));
+for (const file of ['index.html', 'style.css', 'app.js', 'messages.js']) fs.copyFileSync(path.join(source, file), path.join(output, file));
+fs.copyFileSync(path.join(root, 'tipsy-exporter/i18n.js'), path.join(output, 'i18n.js'));
 fs.copyFileSync(path.join(root, 'assets/brand/roleleaf-avatar-v1/roleleaf-anime-avatar.png'), path.join(output, 'logo.png'));
 // The Pages workflow supplies its verified deployment URL and matching QR.
 const publicRecord = { version: record.version, date: record.date, url: null, artifacts: record.artifacts.map(({ platform, filename, version, bytes, sha256, minimum }) => ({ platform, filename, version, bytes, sha256, minimum })) };

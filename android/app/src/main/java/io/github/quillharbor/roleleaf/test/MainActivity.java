@@ -69,7 +69,10 @@ public class MainActivity extends Activity {
     private LinearLayout browser;
     private LinearLayout platforms;
     private Button tipsyButton, caiButton, exportButton;
-    private Button browserBack, browserReload;
+    private Button browserBack, browserReload, openZipButton, languageButton;
+    private static final String[] UI_LOCALES = {"en", "ar", "ja", "ko", "zh-Hant"};
+    private static final String[] UI_LANGUAGE_NAMES = {"English", "العربية", "日本語", "한국어", "繁體中文"};
+    private String uiLanguage = "en";
     private TextView browserHost;
     private String platform = "tipsy", pendingSave, pendingReload, pendingFolder;
     private boolean busy, pickerOpen, panelReady, supported, destroyed;
@@ -109,8 +112,47 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0,dp(44),1); params.setMargins(dp(4),0,dp(4),0); row.addView(view,params);
     }
 
+    private String uiText(int id) {
+        android.content.res.Configuration config = new android.content.res.Configuration(getResources().getConfiguration());
+        config.setLocale(Locale.forLanguageTag(uiLanguage));
+        return createConfigurationContext(config).getString(id);
+    }
+
+    private String panelUrl() {
+        return LOCAL + "/assets/index.html?lang=" + uiLanguage;
+    }
+
+    private void updateLanguageControls() {
+        int selected = Arrays.asList(UI_LOCALES).indexOf(uiLanguage);
+        languageButton.setText(UI_LANGUAGE_NAMES[selected]);
+        languageButton.setContentDescription(uiText(R.string.ui_language));
+        openZipButton.setText(uiText(R.string.ui_open_zip));
+        exportButton.setText(uiText(R.string.ui_batch));
+        browserBack.setContentDescription(uiText(R.string.browser_back));
+        browserReload.setContentDescription(uiText(R.string.browser_reload));
+        browser.setLayoutDirection("ar".equals(uiLanguage) ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+        browserBack.setText("ar".equals(uiLanguage) ? "→" : "←");
+        browserHost.setTextDirection(View.TEXT_DIRECTION_LTR);
+    }
+
+    private void chooseLanguage() {
+        if (pickerOpen || busy) return;
+        new android.app.AlertDialog.Builder(this).setTitle(uiText(R.string.ui_language))
+                .setSingleChoiceItems(UI_LANGUAGE_NAMES, Arrays.asList(UI_LOCALES).indexOf(uiLanguage), (dialog, index) -> {
+                    dialog.dismiss();
+                    if (UI_LOCALES[index].equals(uiLanguage)) return;
+                    uiLanguage = UI_LOCALES[index];
+                    getPreferences(MODE_PRIVATE).edit().putString("language", uiLanguage).apply();
+                    updateLanguageControls();
+                    panelReady = false;
+                    panel.loadUrl(panelUrl());
+                }).show();
+    }
+
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        String preferredLanguage = getPreferences(MODE_PRIVATE).getString("language", "en");
+        if (Arrays.asList(UI_LOCALES).contains(preferredLanguage)) uiLanguage = preferredLanguage;
         getWindow().setNavigationBarColor(Color.rgb(17,19,25));
         if (android.os.Build.VERSION.SDK_INT >= 29) getWindow().setNavigationBarContrastEnforced(false);
         // Local test APK only. Release builds never expose WebView debugging.
@@ -119,7 +161,7 @@ public class MainActivity extends Activity {
                 && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT);
         if (!supported) {
             android.widget.TextView message = new android.widget.TextView(this);
-            message.setText("Update Android System WebView or Chrome before opening RoleLeaf.");
+            message.setText(uiText(R.string.ui_update_webview));
             message.setPadding(dp(24),dp(60),dp(24),dp(24)); setContentView(message); return;
         }
         File[] old = getCacheDir().listFiles((dir, name) -> name.startsWith("export-") || name.startsWith("image-"));
@@ -138,6 +180,8 @@ public class MainActivity extends Activity {
         platforms = row();
         tipsyButton = button("Tipsy", () -> switchSite("tipsy")); caiButton = button("Character.AI", () -> switchSite("character_ai"));
         equal(platforms,tipsyButton); equal(platforms,caiButton);
+        languageButton = button("", this::chooseLanguage);
+        equal(platforms,languageButton);
         LinearLayout toolbar = row();
         toolbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
         browserBack = navigationButton("←", R.string.browser_back, this::goBackInBrowser);
@@ -154,11 +198,11 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams reloadParams = new LinearLayout.LayoutParams(dp(44),dp(44));
         reloadParams.setMarginEnd(dp(6));
         toolbar.addView(browserReload,reloadParams);
-        Button openZip = button("Open ZIP", this::chooseZip);
+        openZipButton = button("", this::chooseZip);
         LinearLayout.LayoutParams openParams = new LinearLayout.LayoutParams(-2,dp(44));
         openParams.setMarginEnd(dp(6));
-        toolbar.addView(openZip,openParams);
-        exportButton = button("Batch export", this::openPicker);
+        toolbar.addView(openZipButton,openParams);
+        exportButton = button("", this::openPicker);
         paintButton(exportButton,true);
         toolbar.addView(exportButton,new LinearLayout.LayoutParams(-2,dp(44)));
         browser.addView(toolbar);
@@ -173,13 +217,14 @@ public class MainActivity extends Activity {
                         android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
             }
         });
-        panel.loadUrl(LOCAL + "/assets/index.html"); showSite();
+        updateLanguageControls();
+        panel.loadUrl(panelUrl()); showSite();
     }
 
     private Button navigationButton(String symbol, int description, Runnable action) {
         Button button = button(symbol, action);
         button.setTextSize(20);
-        button.setContentDescription(getString(description));
+        button.setContentDescription(uiText(description));
         button.setPadding(0,0,0,0);
         return button;
     }
@@ -236,7 +281,7 @@ public class MainActivity extends Activity {
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return true; }
             @Override public void onPageFinished(WebView view, String url) {
-                panelReady = (LOCAL + "/assets/index.html").equals(url);
+                panelReady = panelUrl().equals(url);
                 if (panelReady && pickerOpen) requestPicker();
             }
         });
@@ -299,9 +344,9 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (!request.isForMainFrame()) return false;
-                if (pickerOpen && view == source) { toast("Keep this page open during export."); return true; }
+                if (pickerOpen && view == source) { toast(uiText(R.string.ui_hold_page)); return true; }
                 if (allowed(request.getUrl().toString())) return false;
-                toast("This link is outside the supported sites."); return true;
+                toast(uiText(R.string.ui_outside_link)); return true;
             }
             @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap icon) {
                 failCaptures(view, "The page changed. Try again.");
@@ -318,7 +363,7 @@ public class MainActivity extends Activity {
             }
             @Override public void onReceivedError(WebView view,WebResourceRequest request,android.webkit.WebResourceError error) {
                 if (request.isForMainFrame() && (view == source || view == worker || view == popup)) {
-                    if (view != worker) toast("Page failed to load. Check your connection and refresh.");
+                    if (view != worker) toast(uiText(R.string.ui_load_failed));
                     if (view == worker && pendingReload != null) { reject(pendingReload,"Page failed to load. Check your connection."); pendingReload=null; }
                 }
             }
@@ -376,7 +421,7 @@ public class MainActivity extends Activity {
                 .setType("application/zip");
         if (savedUri != null) choose.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI,savedUri);
         try { startActivityForResult(choose,OPEN_DOCUMENT); }
-        catch (android.content.ActivityNotFoundException e) { toast("Could not open the system file picker."); }
+        catch (android.content.ActivityNotFoundException e) { toast(uiText(R.string.ui_file_picker_failed)); }
     }
     private void viewZip(Uri uri) {
         Intent view = new Intent(Intent.ACTION_VIEW)
@@ -384,9 +429,9 @@ public class MainActivity extends Activity {
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try { startActivity(view); }
         catch (android.content.ActivityNotFoundException e) {
-            toast("No app can open ZIP files. You can find the archive in the folder where it was saved.");
+            toast(uiText(R.string.ui_zip_no_handler));
         } catch (SecurityException e) {
-            toast("Could not open this ZIP. Check that the file is still available.");
+            toast(uiText(R.string.ui_zip_unavailable));
         }
     }
     private void switchSite(String value) {
@@ -572,7 +617,7 @@ public class MainActivity extends Activity {
                     Intent share = new Intent(Intent.ACTION_SEND).setType("application/zip").putExtra(Intent.EXTRA_STREAM,savedUri)
                             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     share.setClipData(android.content.ClipData.newRawUri("RoleLeaf export",savedUri));
-                    startActivity(Intent.createChooser(share,"Share export")); respond(id,true); break;
+                    startActivity(Intent.createChooser(share,uiText(R.string.ui_share))); respond(id,true); break;
                 default: reject(id,"Unsupported operation");
             }
         } catch (Exception e) { reject(id,e.getMessage()==null?"Operation failed":e.getMessage()); }
@@ -694,7 +739,7 @@ public class MainActivity extends Activity {
         });
     }
     @Override public void onBackPressed() {
-        if (busy) { toast("Stop the export or wait for it to finish."); return; }
+        if (busy) { toast(uiText(R.string.ui_wait_export)); return; }
         if (pickerOpen) {
             if (panelReady) panel.evaluateJavascript("window.closeBatchPicker&&window.closeBatchPicker()",null);
             else { try { dismissPicker(); } catch (IOException e) { toast(e.getMessage()); } }

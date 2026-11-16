@@ -3,28 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RoleLeaf · Export</title>
+  <title data-i18n="RoleLeaf · Export">RoleLeaf · Export</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body class="collector">
   <header>
-    <span class="eyebrow" id="version">BOT EXPORTER</span>
-    <h1 id="name">Export current character</h1>
-    <p>Each selected character saves as a separate ZIP.</p>
+    <span class="eyebrow" id="version" data-i18n="BOT EXPORTER">BOT EXPORTER</span>
+    <h1 id="name" data-i18n="Export current character">Export current character</h1>
+    <p data-i18n="Each selected character saves as a separate ZIP.">Each selected character saves as a separate ZIP.</p>
   </header>
   <main>
-    <p id="progress" role="status" aria-live="polite">Connecting to source page…</p>
-    <section id="batch" hidden aria-label="Export queue">
+    <p id="progress" role="status" aria-live="polite" data-i18n="Connecting to source page…">Connecting to source page…</p>
+    <section id="batch" hidden aria-label="Export queue" data-i18n-aria-label="Export queue">
       <p id="destination"></p>
       <ol id="queue"></ol>
     </section>
     <div class="task-actions">
-      <button id="stop" disabled>Stop and save</button>
-      <button id="retry" hidden>Try again</button>
+      <button id="stop" disabled data-i18n="Stop and save">Stop and save</button>
+      <button id="retry" hidden data-i18n="Try again">Try again</button>
     </div>
     <p id="summary"></p>
-    <p class="footnote">Keep the export tab and source chat open. Avoid editing messages or switching chats during export.</p>
+    <p class="footnote" data-i18n="Keep the export tab and source chat open. Avoid editing messages or switching chats during export.">Keep the export tab and source chat open. Avoid editing messages or switching chats during export.</p>
   </main>
+  <script src="i18n.js"></script>
+  <script src="messages.js"></script>
   <script src="core.js"></script>
   <script src="chat.js"></script>
   <script src="png.js"></script>

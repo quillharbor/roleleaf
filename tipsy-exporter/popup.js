@@ -6,11 +6,14 @@ let profileLink = null;
 const targetRoute = (value, id) => creator ? BotCreator.target(platform, id, value) : BotModel.route(value);
 
 const $ = id => document.getElementById(id);
+const { t, render, bindLanguageMenu } = RoleLeafI18n;
+render();
+bindLanguageMenu($('language'), () => location.reload());
 const selected = new Set();
 const siteNames = { tipsy: 'Tipsy', character_ai: 'Character.AI' };
 let tab, platform, current, bots = [], reading = false, launching = false;
 
-document.querySelector('.eyebrow').textContent = 'BOT EXPORTER · ' + chrome.runtime.getManifest().version;
+document.querySelector('.eyebrow').textContent = t('BOT EXPORTER') + ' · ' + chrome.runtime.getManifest().version;
 
 function platformOf(url) {
   const origin = url ? new URL(url).origin : '';
@@ -31,8 +34,8 @@ function updateSelection() {
   $('select-all').indeterminate = count > 0 && count < shown.length;
   $('select-all').disabled = !shown.length;
   $('clear').disabled = !selected.size;
-  $('selected-count').textContent = `${selected.size} selected`;
-  $('collect').textContent = selected.size ? `Export selected (${selected.size})` : 'Export characters';
+  $('selected-count').textContent = t("{count} selected", { count: selected.size });
+  $('collect').textContent = selected.size ? t("Export selected ({count})", { count: selected.size }) : t('Export characters');
   $('collect').disabled = reading || launching || !selected.size;
 }
 
@@ -74,13 +77,14 @@ function renderList() {
     });
     const name = document.createElement('span');
     name.className = 'bot-name';
+    name.dir = 'auto';
     name.textContent = bot.name;
     name.title = bot.name;
     label.append(checkbox, avatarFor(bot), name);
     if (bot.id === current?.id) {
       const badge = document.createElement('span');
       badge.className = 'badge';
-      badge.textContent = 'Current';
+      badge.textContent = t('Current');
       label.append(badge);
     }
     fragment.append(label);
@@ -93,7 +97,7 @@ function renderList() {
 async function readList(first = false) {
   if (reading || launching) return;
   reading = true;
-  $('status').textContent = creator ? 'Reading your created characters…' : 'Reading the chat sidebar…';
+  $('status').textContent = t(creator ? 'Reading your created characters…' : 'Reading the chat sidebar…');
   $('refresh-list').disabled = true;
   $('chat-mode').disabled = $('creator-mode').disabled = true;
   updateSelection();
@@ -121,19 +125,19 @@ async function readList(first = false) {
     });
     const sidebarCount = bots.length;
     if (current && !bots.some(bot => bot.id === current.id)) {
-      bots.unshift({ ...current, url: tab.url, name: tab.title || 'Current character' });
+      bots.unshift({ ...current, url: tab.url, name: tab.title || t('Current character') });
     }
     for (const id of selected) if (!bots.some(bot => bot.id === id)) selected.delete(id);
     if (first && current) selected.add(current.id);
-    $('identity').textContent = `${siteNames[platform]} · ${sidebarCount} ${creator ? 'created characters' : 'characters in the sidebar'}`;
-    $('status').textContent = creator ? (response.more ? 'Scroll down on your source profile and refresh to load more characters.' : sidebarCount ? '' : 'No saved characters on this profile.') : sidebarCount ? '' : 'Open the chat sidebar and refresh the list.';
+    $('identity').textContent = t(creator ? '{site} · Created characters: {count}' : '{site} · Characters in sidebar: {count}', { site: siteNames[platform], count: sidebarCount });
+    $('status').textContent = t(creator ? (response.more ? 'Scroll down on your source profile and refresh to load more characters.' : sidebarCount ? '' : 'No saved characters on this profile.') : sidebarCount ? '' : 'Open the chat sidebar and refresh the list.');
     $('picker').hidden = !bots.length;
     renderList();
   } catch (error) {
     bots = [];
     selected.clear();
-    $('identity').textContent = siteNames[platform] || 'Waiting for source site';
-    $('status').textContent = error.message;
+    $('identity').textContent = siteNames[platform] || t('Waiting for source site');
+    $('status').textContent = t(error.message);
     $('picker').hidden = true;
     updateSelection();
   } finally {
@@ -159,9 +163,9 @@ $('refresh-page').onclick = async () => {
   if (!tab || launching || reading) return;
   try {
     await chrome.tabs.reload(tab.id);
-    $('status').textContent = 'Refresh the list once the source page finishes loading.';
+    $('status').textContent = t('Refresh the list once the source page finishes loading.');
   } catch (error) {
-    $('status').textContent = error.message;
+    $('status').textContent = t(error.message);
   }
 };
 
@@ -194,7 +198,7 @@ $('collect').onclick = async () => {
     window.close();
   } catch (error) {
     if (key) await chrome.storage.session.remove(key).catch(() => {});
-    $('status').textContent = error.message;
+    $('status').textContent = t(error.message);
     launching = false;
     updateSelection();
   }
@@ -206,8 +210,8 @@ function setMode(value) {
   selected.clear(); bots = []; $('search').value = ''; renderList();
   $('chat-mode').setAttribute('aria-pressed', String(!creator));
   $('creator-mode').setAttribute('aria-pressed', String(creator));
-  $('scope-note').textContent = creator ? 'Back up saved settings from your own profile. Each character gets a ZIP without chats.' :
-    'Each ZIP includes the character name, current chat, and chat images. The list comes from the chat sidebar on this page.';
+  $('scope-note').textContent = t(creator ? 'Back up saved settings from your own profile. Each character gets a ZIP without chats.' :
+    'Each ZIP includes the character name, current chat, and chat images. The list comes from the chat sidebar on this page.');
   void readList(!creator);
 }
 $('chat-mode').onclick = () => setMode(false);

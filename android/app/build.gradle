@@ -19,8 +19,8 @@ android {
         applicationId 'io.github.quillharbor.roleleaf.demo'
         minSdk 26
         targetSdk 35
-        versionCode 22
-        versionName '0.5.7-demo.22'
+        versionCode 23
+        versionName '0.5.8-demo.23'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -42,7 +42,7 @@ tasks.register('syncExporterAssets', Sync) {
     into layout.buildDirectory.dir('generated/assets')
     from('../../tipsy-exporter') {
         into 'shared'
-        include 'core.js', 'chat.js', 'png.js', 'bot-model.js', 'bot-creator.js', 'bot-package.js', 'collect-bot.js'
+        include 'i18n.js', 'messages.js', 'core.js', 'chat.js', 'png.js', 'bot-model.js', 'bot-creator.js', 'bot-package.js', 'collect-bot.js'
         include 'page.bundle.js', 'bridge.bundle.js', 'cai-page.bundle.js', 'cai-bridge.bundle.js'
     }
     from('../../assets/brand/roleleaf-avatar-v1/roleleaf-anime-avatar.png') {

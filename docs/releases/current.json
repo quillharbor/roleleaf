@@ -1,66 +1,79 @@
 {
   "product": "RoleLeaf",
-  "release": "0.5.7",
+  "release": "0.5.8",
   "status": "demo-published; macos-internal-only",
   "license": "pending; source remains private",
-  "public_demo_platforms": [
-    "android",
-    "chrome"
+  "locales": [
+    "en",
+    "ar",
+    "ja",
+    "ko",
+    "zh-Hant"
   ],
+  "default_locale": "en",
   "artifacts": [
     {
       "platform": "android",
-      "version": "0.5.7-demo.22",
-      "path": "android/release/0.5.7-demo.22/RoleLeaf-DEMO-0.5.7-demo.22.apk",
-      "filename": "RoleLeaf-DEMO-0.5.7-demo.22.apk",
-      "bytes": 4375830,
-      "sha256": "7296c8892837caa1a7d4b694df6369bf55de941c777b8082afc97397cea4b0f1",
+      "version": "0.5.8-demo.23",
+      "path": "android/release/0.5.8-demo.23/RoleLeaf-DEMO-0.5.8-demo.23.apk",
+      "filename": "RoleLeaf-DEMO-0.5.8-demo.23.apk",
+      "bytes": 4400944,
+      "sha256": "6c6c9f48a90feaf88e3a5f222535e3c24ef9054d4f2cd2ec26bbf65b871a2c7b",
       "minimum": "Android 8+",
       "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 22,
+      "version_code": 23,
       "signing": "fixed demo release key",
       "debuggable": false,
-      "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f"
+      "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f",
+      "architecture": "architecture-independent Java/WebView",
+      "channel": "demo",
+      "checks": [
+        "69 Node tests",
+        "assembleRelease and lintRelease",
+        "APK CRC, bundled assets, and APK v2 signature"
+      ]
     },
     {
       "platform": "chrome",
-      "version": "0.5.7",
-      "path": "dist/RoleLeaf-0.5.7.zip",
-      "filename": "RoleLeaf-0.5.7.zip",
-      "bytes": 297422,
-      "sha256": "785f81c042031ba886fb73f6f1b7ab749028de19ad426cb3e379795e5e2e2475",
-      "minimum": "Desktop Chrome 111+"
+      "version": "0.5.8",
+      "path": "dist/RoleLeaf-0.5.8.zip",
+      "filename": "RoleLeaf-0.5.8.zip",
+      "bytes": 350025,
+      "sha256": "7112228be7ee17a7fe2ce3513f3882ede12ae72e44210fdad2133fbad2627b0f",
+      "minimum": "Desktop Chrome 111+",
+      "channel": "unpacked-extension",
+      "checks": [
+        "69 Node tests",
+        "CRC and bundled assets"
+      ]
     },
     {
       "platform": "macos",
-      "version": "0.5.7",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.7-arm64.dmg",
-      "path": "desktop/release/0.5.7-arm64-xiOPve/RoleLeaf-TEST-ONLY-0.5.7-arm64.dmg",
-      "bytes": 108799106,
-      "sha256": "dc0561375adca7fdcc277bf2d45603c927af6b23f6797758db0356e461c4015b",
+      "version": "0.5.8",
+      "path": "desktop/release/0.5.8-arm64-UywkjJ/RoleLeaf-TEST-ONLY-0.5.8-arm64.dmg",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.8-arm64.dmg",
+      "bytes": 108815109,
+      "sha256": "91a1fa162a9a0b9c66e6fbc6af46fa5a26ea8c5fd4a538096afb83cec134eca1",
       "architecture": "arm64",
       "minimum": "macOS 13",
-      "application_id": "io.github.quillharbor.roleleaf",
       "signing": "ad-hoc",
       "notarized": false,
       "distribution": "internal-only",
-      "exposed_in_demo": false
+      "exposed_in_demo": false,
+      "checks": [
+        "DMG, ASAR and ad-hoc signature checked by packaging script"
+      ]
     }
   ],
   "checks": [
-    "67 Node tests",
-    "Android assembleRelease and lintRelease",
-    "APK and ZIP CRC",
-    "APK v2 signature verified",
-    "Demo application ID/versionCode verified",
-    "APK non-debuggable verified",
-    "Internal-only macOS DMG, ASAR, architecture and ad-hoc signature verified"
+    "69 Node tests",
+    "Android assembleRelease, lintRelease and fixed signing certificate",
+    "APK and ZIP CRC, source-to-package assets",
+    "DMG, ASAR and ad-hoc signature checked by packaging script"
   ],
   "not_verified": [
-    "Live source-account acceptance in the newly signed demo",
-    "Android developer verification registration",
-    "Production macOS signing/notarization; desktop is not distributed",
-    "Fresh-device installation: USB device unavailable"
+    "Live source-account acceptance for 0.5.8",
+    "Production macOS signing and notarization"
   ],
   "demo_url": "https://quillharbor.github.io/roleleaf-demo/"
 }

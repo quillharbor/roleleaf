@@ -2,6 +2,8 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
+const { t, render } = RoleLeafI18n;
+render();
 const params = new URL(location.href).searchParams;
 const sourceTab = Number(params.get('tab'));
 const batchId = params.get('batch');
@@ -11,10 +13,10 @@ const statuses = {
 };
 let controller, working = false, workerTab, job;
 
-$('version').textContent = 'BOT EXPORTER · ' + chrome.runtime.getManifest().version;
+$('version').textContent = t('BOT EXPORTER') + ' · ' + chrome.runtime.getManifest().version;
 
 function showProgress(text, error = false) {
-  $('progress').textContent = text;
+  $('progress').textContent = t(text);
   $('progress').classList.toggle('error', error);
 }
 
@@ -34,7 +36,7 @@ function finishTask(retry) {
 }
 
 function counts(output) {
-  return `Images: ${output.images} of ${output.imageCount} · Messages: ${output.messages}`;
+  return t("Images: {saved} of {total} · Messages: {messages}", { saved: output.images, total: output.imageCount, messages: output.messages });
 }
 
 async function collectSelectedBot({ route, url, current, progress, onCharacter }) {
@@ -55,7 +57,7 @@ async function collectSelectedBot({ route, url, current, progress, onCharacter }
   controller.signal.throwIfAborted();
   const worker = route.platform === 'tipsy' || !current;
   if (worker) {
-    progress('Reloading chat history to get the latest messages…');
+    progress(t('Reloading chat history to get the latest messages…'));
     const tab = await chrome.tabs.create({ url, active: false });
     workerTab = tab.id;
     controller.signal.throwIfAborted();
@@ -86,12 +88,12 @@ async function runSingle() {
       progress: showProgress, onCharacter: name => { $('name').textContent = name; },
     });
     $('summary').textContent =
-      `${counts(output)} · Chats: ${output.conversations}\nSee the export report for coverage and missing content.`;
+      counts(output) + ' · ' + t('Chats: {count}', { count: output.conversations }) + '\n' + t('See the export report for coverage and missing content.');
     $('stop').disabled = true;
     showProgress('Export ready. Choose where to save it.');
     await saveBot(output, { saveAs: true });
     showProgress('Character ZIP saved.');
-    $('summary').textContent += '\nFile saved. Unzip it and open README.html.';
+    $('summary').textContent += '\n' + t('File saved. Unzip it and open README.html.');
   } catch (error) {
     showProgress(error.message || 'Export failed.', true);
   } finally {
@@ -130,10 +132,11 @@ function renderBatch() {
     const label = document.createElement('strong');
     const state = document.createElement('span');
     const detail = document.createElement('small');
+    label.dir = 'auto';
     label.textContent = bot.name;
     state.className = `queue-status ${bot.status}`;
-    state.textContent = statuses[bot.status];
-    detail.textContent = bot.detail;
+    state.textContent = t(statuses[bot.status]);
+    detail.textContent = t(bot.detail);
     row.append(label, state, detail);
     return row;
   });
@@ -177,7 +180,7 @@ async function runBot(bot) {
     renderBatch();
     await saveBot(output, { folder: job.folder, saveAs: false });
     bot.status = output.partial ? 'partial' : 'saved';
-    bot.detail = job.creator ? `Images: ${output.images} of ${output.imageCount} · Creator settings` : counts(output);
+    bot.detail = job.creator ? t("Images: {saved} of {total} · Creator settings", { saved: output.images, total: output.imageCount }) : counts(output);
   } catch (error) {
     bot.status = controller.signal.aborted && error === controller.signal.reason ? 'skipped' : 'failed';
     bot.detail = bot.status === 'skipped' ? 'Export stopped.' : error.message || 'Export failed.';
@@ -194,7 +197,7 @@ async function runBatch() {
   renderBatch();
   for (const [index, bot] of pending.entries()) {
     if (controller.signal.aborted) break;
-    showProgress(`Exporting ${index + 1} of ${pending.length}`);
+    showProgress(t("Exporting {current} of {total}", { current: index + 1, total: pending.length }));
     await runBot(bot);
   }
   for (const bot of pending.filter(bot => bot.status === 'pending')) {
@@ -205,7 +208,7 @@ async function runBatch() {
   const failed = job.bots.filter(bot => bot.status === 'failed').length;
   const skipped = job.bots.filter(bot => bot.status === 'skipped').length;
   showProgress(controller.signal.aborted ? 'Queue stopped.' : 'Queue finished.');
-  $('summary').textContent = `Saved: ${saved} · Failed: ${failed} · Skipped: ${skipped}`;
+  $('summary').textContent = t("Saved: {saved} · Failed: {failed} · Skipped: {skipped}", { saved, failed, skipped });
   renderBatch();
   finishTask(failed + skipped > 0);
 }
@@ -222,15 +225,15 @@ window.addEventListener('pagehide', () => {
 });
 
 if (batchId) {
-  $('name').textContent = 'Batch export';
+  $('name').textContent = t('Batch export');
   $('batch').hidden = false;
-  $('stop').textContent = 'Stop queue';
-  $('retry').textContent = 'Retry failed or skipped items';
+  $('stop').textContent = t('Stop queue');
+  $('retry').textContent = t('Retry failed or skipped items');
   $('retry').onclick = runBatch;
   loadBatch().then(loaded => {
     job = loaded;
-    if (job.creator) $('name').textContent = 'My Characters export';
-    $('destination').textContent = `Chrome downloads / ${job.folder}`;
+    if (job.creator) $('name').textContent = t('My Characters export');
+    $('destination').textContent = t("Chrome downloads / {folder}", { folder: job.folder });
     return runBatch();
   }).catch(error => showProgress(error.message, true));
 } else {

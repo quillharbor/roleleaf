@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RoleLeaf</string>
     <string name="browser_back">Go back</string>
     <string name="browser_reload">Reload page</string>
+    <string name="ui_language">Language</string>
+    <string name="ui_open_zip">Open ZIP</string>
+    <string name="ui_batch">Batch export</string>
+    <string name="ui_share">Share export</string>
+    <string name="ui_update_webview">Update Android System WebView or Chrome before opening RoleLeaf.</string>
+    <string name="ui_hold_page">Keep this page open during export.</string>
+    <string name="ui_outside_link">This link is outside the supported sites.</string>
+    <string name="ui_load_failed">Page failed to load. Check your connection and refresh.</string>
+    <string name="ui_file_picker_failed">Could not open the system file picker.</string>
+    <string name="ui_zip_no_handler">No app can open ZIP files. You can find the archive in the folder where it was saved.</string>
+    <string name="ui_zip_unavailable">Could not open this ZIP. Check that the file is still available.</string>
+    <string name="ui_wait_export">Stop the export or wait for it to finish.</string>
+    <string name="app_name" translatable="false">RoleLeaf</string>
     <color name="roleleaf_icon_background">#171521</color>
 </resources>

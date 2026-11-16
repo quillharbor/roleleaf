@@ -1,8 +1,10 @@
 # RoleLeaf Demo
 
+English · [العربية](docs/readme/ar.md) · [日本語](docs/readme/ja.md) · [한국어](docs/readme/ko.md) · [繁體中文](docs/readme/zh-Hant.md)
+
 Keep a local copy of your AI characters and conversations from Tipsy and Character.AI.
 
-**Demo 0.5.7 · Android and Chrome · No app-store release.**
+**Demo 0.5.8 · Android and Chrome · No app-store release.**
 
 | Platform | Requirements | Install |
 | --- | --- | --- |
@@ -12,6 +14,8 @@ Keep a local copy of your AI characters and conversations from Tipsy and Charact
 [Download the Android and Chrome demos](https://quillharbor.github.io/roleleaf-demo/). Publication and validation details are recorded in `docs/releases/demo.json`. See the [installation guide](docs/installation.md), [privacy notes](PRIVACY.md) and [validation record](tests/VALIDATION.md). The demo distribution includes only Android and Chrome. macOS remains internal and has no visitor-facing download.
 
 ## Use
+
+RoleLeaf opens in English. On Android, choose a language at the bottom of the app. In Chrome, use the language menu in the extension popup.
 
 1. Sign in to a supported source site in Chrome or the Android app.
 2. Open Batch Export, choose Recent or My Characters, select characters and start exporting.

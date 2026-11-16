@@ -14,3 +14,7 @@ Live source-account exports in the new signed demo have not been re-verified. Pr
 Actual artifacts, hashes, installation checks and publication status are recorded in docs/releases/current.json and docs/releases/demo.json. Do not treat a planned URL as a live download.
 
 Publication: the Android/Chrome download page and demo prerelease are live. Anonymous downloads matched both package SHA-256 values; the QR SVG matched the locally generated one. The page was viewed in the browser with both platforms and no macOS download. Live account and physical installation acceptance limits above remain unchanged.
+
+## 0.5.8 language support
+
+English, Arabic, Japanese, Korean, and Traditional Chinese. English is the default. Chrome popup and download page language switching, Arabic RTL, download links and a 390 px layout passed in Chromium. Both builds passed 69 Node tests. Android assembly, lint, APK signing/CRC and source-to-package checks passed. The signed Demo installed on the emulator. The 0.5.8 release has not been tested against live source accounts. The public APK and Chrome ZIP downloaded anonymously through GitHub Pages with matching SHA-256 hashes.

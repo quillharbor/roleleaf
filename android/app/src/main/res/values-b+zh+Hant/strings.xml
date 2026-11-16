@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="browser_back">返回</string>
+    <string name="browser_reload">重新載入頁面</string>
+    <string name="ui_language">語言</string>
+    <string name="ui_open_zip">開啟 ZIP</string>
+    <string name="ui_batch">批次匯出</string>
+    <string name="ui_share">分享匯出檔</string>
+    <string name="ui_update_webview">開啟 RoleLeaf 前，請更新 Android System WebView 或 Chrome。</string>
+    <string name="ui_hold_page">匯出期間請保持此頁面開啟。</string>
+    <string name="ui_outside_link">此連結不在支援網站範圍內。</string>
+    <string name="ui_load_failed">頁面載入失敗。請檢查連線並重新整理。</string>
+    <string name="ui_file_picker_failed">無法開啟系統檔案選擇器。</string>
+    <string name="ui_zip_no_handler">沒有可開啟 ZIP 的應用程式。你可在原儲存資料夾找到壓縮檔。</string>
+    <string name="ui_zip_unavailable">無法開啟此 ZIP。請確認檔案仍可存取。</string>
+    <string name="ui_wait_export">請停止匯出或等候完成。</string>
+</resources>

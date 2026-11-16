@@ -1,6 +1,9 @@
 /* global BotModel, BotPackage, collectBot, readChat */
 'use strict';
 const $ = id => document.getElementById(id), pending = new Map();
+const { t } = RoleLeafI18n;
+RoleLeafI18n.select(new URL(location.href).searchParams.get('lang'));
+RoleLeafI18n.render();
 let serial = 0, platform = 'tipsy', route = null, job = null, output = null;
 let phase = 'empty', saved = false, saving = false;
 let creator = false, profileLink = null;
@@ -13,12 +16,13 @@ function renderBots() {
   $('bot-search').disabled = Boolean(job || saving || opening);
   const query = $('bot-search').value.trim().toLocaleLowerCase();
   const matches = matchingBots();
-  $('list-count').textContent = opening ? (creator ? 'Loading your characters…' : 'Loading chats…') : `${listedBots.length} characters loaded${query ? ` · ${matches.length} matches` : ''}`;
+  $('list-count').textContent = opening ? t(creator ? 'Loading your characters…' : 'Loading chats…') :
+    [t('{count} characters loaded', { count: listedBots.length }), ...(query ? [t('{count} matches', { count: matches.length })] : [])].join(' · ');
   $('bot-list').replaceChildren();
   for (const bot of matches) {
     const row = document.createElement('label'); row.className = 'bot-row'; row.dataset.botId = bot.id;
     row.dataset.selected = String(selectedBots.has(bot.id));
-    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = selectedBots.has(bot.id); checkbox.setAttribute('aria-label', `Select ${bot.name}`);
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = selectedBots.has(bot.id); checkbox.setAttribute('aria-label', t('Select {name}', { name: bot.name }));
     checkbox.onchange = () => { checkbox.checked ? selectedBots.add(bot.id) : selectedBots.delete(bot.id); renderSelection(); };
     const avatar = document.createElement('span'); avatar.className = 'bot-avatar'; avatar.textContent = Array.from(bot.name || 'B')[0]; avatar.setAttribute('aria-hidden', 'true');
     if (BotPackage.mediaURL(bot.avatar)) {
@@ -28,11 +32,11 @@ function renderBots() {
       image.src = '/avatar?url=' + encodeURIComponent(bot.avatar);
       avatar.append(image);
     }
-    const name = document.createElement('span'); name.className = 'bot-name'; name.textContent = bot.name;
+    const name = document.createElement('span'); name.className = 'bot-name'; name.dir = 'auto'; name.textContent = bot.name;
     row.append(checkbox, avatar, name); $('bot-list').append(row);
   }
   $('list-empty').hidden = opening || matches.length > 0;
-  $('list-empty').textContent = query ? 'No matching characters.' : creator ? 'No saved characters found.' : 'Sign in on the source site, then refresh the list.';
+  $('list-empty').textContent = t(query ? 'No matching characters.' : creator ? 'No saved characters found.' : 'Sign in on the source site, then refresh the list.');
   renderSelection();
 }
 function matchingBots() {
@@ -46,7 +50,7 @@ function renderSelection() {
   $('select-visible').indeterminate = count > 0 && count < matches.length;
   $('select-visible').disabled = opening || !matches.length;
   $('clear-selection').disabled = opening || !selectedBots.size;
-  $('selection-count').textContent = `${selectedBots.size} selected`;
+  $('selection-count').textContent = t("{count} selected", { count: selectedBots.size });
   Array.from($('bot-list').children).forEach(row => {
     const selected = selectedBots.has(row.dataset.botId);
     row.dataset.selected = String(selected);
@@ -200,9 +204,9 @@ function call(method, params = {}, timeout = 45000) {
     catch (error) { clearTimeout(timer); pending.delete(id); reject(error); }
   });
 }
-const status = text => { $('status').textContent = text; };
+const status = text => { $('status').textContent = t(text); };
 function listNotice(text) {
-  $('list-notice').textContent = text;
+  $('list-notice').textContent = t(text);
   $('list-notice').hidden = !text;
 }
 function showExport() {
@@ -219,13 +223,13 @@ function renderActions() {
   $('export').hidden = creator || !route;
   $('export').disabled = working || saving || opening || !route;
   $('export-selected').disabled = working || saving || opening || !selectedBots.size;
-  $('export-selected').textContent = `Export (${selectedBots.size})`;
+  $('export-selected').textContent = t("Export ({count})", { count: selectedBots.size });
   $('close-export').disabled = working || saving;
   $('export-progress').hidden = !working && !saving;
   $('stop').hidden = !working;
   $('stop').disabled = job?.signal.aborted ?? false;
   $('save').hidden = !hasOutput || saved;
-  $('save-label').textContent = output?.files ? 'Save ZIPs' : 'Save ZIP';
+  $('save-label').textContent = t(output?.files ? 'Save ZIPs' : 'Save ZIP');
   $('share').hidden = !hasOutput || !saved || Boolean(output?.files);
   $('save-copy').hidden = !hasOutput || !saved;
   $('result').hidden = !hasOutput;
@@ -237,13 +241,13 @@ function setPhase(value) {
     collecting: 'Exporting', done: 'Export ready',
     saving: output?.files ? 'Saving ZIPs' : 'Saving ZIP', saved: output?.files ? 'ZIPs saved' : 'ZIP saved', error: 'Export incomplete',
   };
-  $('status-title').textContent = labels[value];
+  $('status-title').textContent = t(labels[value]);
   renderActions();
 }
 function updateScope() {
   $('chat-mode').setAttribute('aria-pressed', String(!creator));
   $('creator-mode').setAttribute('aria-pressed', String(creator));
-  $('picker-title').textContent = creator ? 'My Characters' : 'Choose characters';
+  $('picker-title').textContent = t(creator ? 'My Characters' : 'Choose characters');
   $('message-stat').hidden = creator;
   $('open-profile').hidden = true;
   profileLink = null;
@@ -342,7 +346,7 @@ async function collect() {
       name => { $('export-character').textContent = name; $('export-character').hidden = false; }, status);
     $('message-count').textContent = String(output.messages);
     $('image-count').textContent = String(output.images);
-    $('result-label').textContent = output.partial ? 'Partial export ready' : 'Export ready';
+    $('result-label').textContent = t(output.partial ? 'Partial export ready' : 'Export ready');
     $('result').dataset.partial = String(output.partial);
     const megabytes = output.bytes.length >= 1024 * 1024;
     $('package-size').textContent = (output.bytes.length / (megabytes ? 1024 * 1024 : 1024)).toFixed(1);
@@ -363,12 +367,12 @@ async function collectSelected() {
       progress: (index, total, bot) => {
         $('export-character').textContent = bot.name;
         $('export-character').hidden = false;
-        status(`Exporting character ${index + 1} of ${total}…`);
+        status(t("Exporting character {current} of {total}…", { current: index + 1, total }));
       },
       collect: async bot => {
         const target = creator ? BotCreator.target(platform, bot.id, bot.url) : BotModel.route(bot.url);
         if (!target || target.platform !== platform) throw Error('Character belongs to a different source. Refresh the list.');
-        const progress = text => status(`${bots.indexOf(bot) + 1} / ${bots.length} · ${text}`);
+        const progress = text => status(`${bots.indexOf(bot) + 1} / ${bots.length} · ${t(text)}`);
         if (creator) {
           job.signal.throwIfAborted();
           await call('openCreatorWorker', { url: target.url });
@@ -384,15 +388,15 @@ async function collectSelected() {
     const mb = batch.bytes >= 1024 * 1024;
     $('package-size').textContent = (batch.bytes / (mb ? 1024 * 1024 : 1024)).toFixed(1); $('size-unit').textContent = mb ? 'MB' : 'KB';
     $('export-character').hidden = true;
-    $('result-label').textContent = `${count} of ${bots.length} character packages ready`;
+    $('result-label').textContent = t("{count} of {total} character packages ready", { count, total: bots.length });
     $('result').dataset.partial = String(batch.partial);
     const issues = batch.results.filter(item => !['complete_current_conversation','creator_settings_saved'].includes(item.status));
     const explain = issues.slice(0, 5).map(item => {
       const name = bots.find(bot => bot.id === item.id)?.name || item.id;
-      return `${name}: ${item.error || (item.status === 'partial' ? 'Partial; see the ZIP report.' : 'Skipped.')}`;
+      return `${name}: ${t(item.error || (item.status === 'partial' ? 'Partial; see the ZIP report.' : 'Skipped.'))}`;
     });
-    status([`Exported ${count} of ${bots.length} characters. Each character saves as a separate ZIP.`,
-      ...explain, ...(issues.length > explain.length ? [`And ${issues.length - explain.length} more.`] : [])].join('\n'));
+    status([t("Exported {count} of {total} characters. Each character saves as a separate ZIP.", { count, total: bots.length }),
+      ...explain, ...(issues.length > explain.length ? [t("And {count} more.", { count: issues.length - explain.length })] : [])].join('\n'));
     setPhase('done');
   } catch (error) { status(error.message); setPhase('error'); }
   finally { await call('closeWorker').catch(() => {}); await call('busy', { value: false }).catch(() => {}); job = null; renderActions(); }
@@ -412,14 +416,14 @@ async function saveBatch(copy) {
   try {
     for (const file of output.files) {
       if (output.savedFiles.has(file)) continue;
-      status(`Saving ${output.savedFiles.size + 1} of ${output.files.length} ZIPs…`);
+      status(t("Saving {current} of {total} ZIPs…", { current: output.savedFiles.size + 1, total: output.files.length }));
       await stageZip(file);
       await call('zipSaveToFolder');
       output.savedFiles.add(file);
     }
     return true;
   } catch (error) {
-    throw Error(`Saved ${output.savedFiles.size} of ${output.files.length} ZIPs. ${error.message} Tap Save ZIPs to retry the remaining files.`);
+    throw Error(t("Saved {saved} of {total} ZIPs. {error} Tap Save ZIPs to retry the remaining files.", { saved: output.savedFiles.size, total: output.files.length, error: t(error.message) }));
   }
 }
 async function save() {
@@ -430,7 +434,7 @@ async function save() {
     if (!output.files) await stageZip(output);
     const result = output.files ? await saveBatch(saved) : await call('zipSave', {}, 600000);
     saved = output.files ? output.savedFiles.size === output.files.length : result || saved;
-    status(result ? output.files ? `Saved ${output.files.length} separate ZIPs. Use Open ZIP on the toolbar to browse them.` : 'File saved. Unzip it and open README.html to view the export.' : 'Save canceled. You can still save this export.');
+    status(result ? output.files ? t("Saved {count} separate ZIPs. Use Open ZIP on the toolbar to browse them.", { count: output.files.length }) : 'File saved. Unzip it and open README.html to view the export.' : 'Save canceled. You can still save this export.');
     setPhase(saved ? 'saved' : 'done');
   } catch (error) { if (output.files) saved = false; status(error.message); setPhase('error'); await call('zipAbort').catch(() => {}); }
   finally { await call('busy', { value: false }).catch(() => {}); saving = false; renderActions(); }

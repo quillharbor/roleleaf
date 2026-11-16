@@ -16,8 +16,8 @@ function fixture({ hydrate = false, changeConversation = false, cai = false, col
   const current = cai ? 'https://character.ai/' : 'https://tipsy.chat/chat/100000002?conversation_id=current&language_code=en';
   let worker, listReads = 0, dismissed = 0, statusReads = 0, generation = 0, ownTab = false;
   const accountBots = hydrate ? Array.from({ length: 30 }, (_, i) => ({ id: String(100000001 + i), name: `Synthetic ${i + 1}`, url: `https://tipsy.chat/chat/${100000001 + i}` })) : bots;
-  const env = vm.createContext({ URL, TextEncoder, btoa, Uint8Array, AbortController, setTimeout: (fn, ms) => setTimeout(fn, Math.min(ms, 5)), clearTimeout,
-    document: { getElementById: node, createElement: element, body: element() },
+  const env = vm.createContext({ URL, location: new URL("https://appassets.androidplatform.net/assets/index.html"), TextEncoder, btoa, Uint8Array, AbortController, setTimeout: (fn, ms) => setTimeout(fn, Math.min(ms, 5)), clearTimeout,
+    document: { documentElement: {}, querySelectorAll: () => [], getElementById: node, createElement: element, body: element() },
     window: { addEventListener() {} },
     NativeApp: { postMessage(raw) {
       const { id, method, params } = JSON.parse(raw); let data = true;
@@ -66,7 +66,7 @@ function fixture({ hydrate = false, changeConversation = false, cai = false, col
     collectBot: async ({ route, onCharacter }) => { onCharacter('Synthetic fixture'); return { bytes: new Uint8Array(10), messages: 2, images: 1, partial: false, filename: `${route.id}.zip` }; },
   });
   vm.runInContext(fs.readFileSync('tipsy-exporter/collect-bot.js', 'utf8').split('async function readCharacter')[0], env);
-  for (const file of ['core', 'bot-model', 'bot-creator']) vm.runInContext(fs.readFileSync(`tipsy-exporter/${file}.js`, 'utf8'), env);
+  for (const file of ['i18n', 'messages', 'core', 'bot-model', 'bot-creator']) vm.runInContext(fs.readFileSync(`tipsy-exporter/${file}.js`, 'utf8'), env);
   vm.runInContext(source('mobile-batch'), env); vm.runInContext(source('mobile'), env);
   return { env, node, opened, written, calls, dismissed: () => dismissed };
 }

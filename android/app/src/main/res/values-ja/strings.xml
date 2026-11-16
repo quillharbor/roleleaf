@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="browser_back">戻る</string>
+    <string name="browser_reload">ページを再読み込み</string>
+    <string name="ui_language">言語</string>
+    <string name="ui_open_zip">ZIP を開く</string>
+    <string name="ui_batch">一括エクスポート</string>
+    <string name="ui_share">エクスポートを共有</string>
+    <string name="ui_update_webview">RoleLeaf を開く前に Android システムの WebView または Chrome を更新してください。</string>
+    <string name="ui_hold_page">エクスポート中はこのページを開いたままにしてください。</string>
+    <string name="ui_outside_link">このリンクは対応サイトの外部にあります。</string>
+    <string name="ui_load_failed">ページを読み込めませんでした。接続を確認して再読み込みしてください。</string>
+    <string name="ui_file_picker_failed">システムのファイル選択画面を開けませんでした。</string>
+    <string name="ui_zip_no_handler">ZIP を開けるアプリがありません。保存先のフォルダーでファイルを確認できます。</string>
+    <string name="ui_zip_unavailable">この ZIP を開けませんでした。ファイルが残っているか確認してください。</string>
+    <string name="ui_wait_export">エクスポートを停止するか、完了までお待ちください。</string>
+</resources>

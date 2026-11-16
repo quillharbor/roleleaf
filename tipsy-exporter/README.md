@@ -1,4 +1,6 @@
-# RoleLeaf Demo for Chrome — 0.5.7
+# RoleLeaf Demo for Chrome — 0.5.8
+
+[English](https://quillharbor.github.io/roleleaf-demo/?lang=en#chrome-help) · [العربية](https://quillharbor.github.io/roleleaf-demo/?lang=ar#chrome-help) · [日本語](https://quillharbor.github.io/roleleaf-demo/?lang=ja#chrome-help) · [한국어](https://quillharbor.github.io/roleleaf-demo/?lang=ko#chrome-help) · [繁體中文](https://quillharbor.github.io/roleleaf-demo/?lang=zh-Hant#chrome-help)
 
 1. Extract the ZIP to a permanent location.
 2. Open chrome://extensions and enable Developer mode.
