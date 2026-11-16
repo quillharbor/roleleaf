@@ -1,57 +1,66 @@
 {
   "product": "RoleLeaf",
-  "release": "0.5.4",
-  "status": "private-review",
-  "license": "pending",
-  "created_at": "2026-11-13T17:15:02+08:00",
-  "repository": "https://github.com/quillharbor/roleleaf",
+  "release": "0.5.7",
+  "status": "demo-published; macos-internal-only",
+  "license": "pending; source remains private",
+  "public_demo_platforms": [
+    "android",
+    "chrome"
+  ],
   "artifacts": [
     {
+      "platform": "android",
+      "version": "0.5.7-demo.22",
+      "path": "android/release/0.5.7-demo.22/RoleLeaf-DEMO-0.5.7-demo.22.apk",
+      "filename": "RoleLeaf-DEMO-0.5.7-demo.22.apk",
+      "bytes": 4375830,
+      "sha256": "7296c8892837caa1a7d4b694df6369bf55de941c777b8082afc97397cea4b0f1",
+      "minimum": "Android 8+",
+      "application_id": "io.github.quillharbor.roleleaf.demo",
+      "version_code": 22,
+      "signing": "fixed demo release key",
+      "debuggable": false,
+      "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f"
+    },
+    {
       "platform": "chrome",
-      "version": "0.5.4",
-      "filename": "RoleLeaf-0.5.4.zip",
-      "path": "dist/RoleLeaf-0.5.4.zip",
-      "bytes": 212364,
-      "sha256": "d0752e88936445383dd2d1f1f1e255eefb0c9edb2a60f7baea3ab536344216fa",
-      "minimum": "Chrome 111"
+      "version": "0.5.7",
+      "path": "dist/RoleLeaf-0.5.7.zip",
+      "filename": "RoleLeaf-0.5.7.zip",
+      "bytes": 297422,
+      "sha256": "785f81c042031ba886fb73f6f1b7ab749028de19ad426cb3e379795e5e2e2475",
+      "minimum": "Desktop Chrome 111+"
     },
     {
       "platform": "macos",
-      "version": "0.5.4",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.4-arm64.dmg",
-      "path": "desktop/release/0.5.4-arm64-ueXy6T/RoleLeaf-TEST-ONLY-0.5.4-arm64.dmg",
-      "bytes": 108761993,
-      "sha256": "25364cf668db25dd92688ac24f04c61c5e7ac7379027a1c669c664be93bf798e",
-      "application_id": "io.github.quillharbor.roleleaf",
+      "version": "0.5.7",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.7-arm64.dmg",
+      "path": "desktop/release/0.5.7-arm64-xiOPve/RoleLeaf-TEST-ONLY-0.5.7-arm64.dmg",
+      "bytes": 108799106,
+      "sha256": "dc0561375adca7fdcc277bf2d45603c927af6b23f6797758db0356e461c4015b",
       "architecture": "arm64",
       "minimum": "macOS 13",
+      "application_id": "io.github.quillharbor.roleleaf",
       "signing": "ad-hoc",
-      "notarized": false
-    },
-    {
-      "platform": "android",
-      "version": "0.5.4-android.15",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.4-android.15.apk",
-      "path": "android/release/0.5.4-android.15/RoleLeaf-TEST-ONLY-0.5.4-android.15.apk",
-      "bytes": 4868518,
-      "sha256": "a9b8952ae03127dc345a51caade3d8c8100bdd95e667ea96d7b5924b0263f4ef",
-      "application_id": "io.github.quillharbor.roleleaf.test",
-      "version_code": 15,
-      "minimum": "Android 8 / API 26",
-      "signing": "per-checkout debug key",
-      "certificate_sha256": "8f0f8f29a450c64588e6f4a0e687aef1213a160f598d4cf214fbeaba06ad515e"
+      "notarized": false,
+      "distribution": "internal-only",
+      "exposed_in_demo": false
     }
   ],
   "checks": [
-    "58 Node tests",
-    "Chrome ZIP CRC and source match",
-    "macOS DMG verification, ASAR source match and ad-hoc signature",
-    "Android assembleDebug, lintDebug, APK v2 signature, CRC and asset match",
-    "source and application-payload identity scan"
+    "67 Node tests",
+    "Android assembleRelease and lintRelease",
+    "APK and ZIP CRC",
+    "APK v2 signature verified",
+    "Demo application ID/versionCode verified",
+    "APK non-debuggable verified",
+    "Internal-only macOS DMG, ASAR, architecture and ad-hoc signature verified"
   ],
   "not_verified": [
-    "clean-device installation and upgrades",
-    "live reported Tipsy conversation",
-    "production signing and notarization"
-  ]
+    "Live source-account acceptance in the newly signed demo",
+    "Android developer verification registration",
+    "Production macOS signing/notarization; desktop is not distributed",
+    "Fresh-device installation: USB device unavailable"
+  ],
+  "demo_url": "https://quillharbor.github.io/roleleaf-demo/"
 }

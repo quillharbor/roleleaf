@@ -1,6 +1,6 @@
 (function(root){
 'use strict';
-const VERSION='0.5.4', CHANNEL='bot-exporter-v1';
+const VERSION='0.5.7', CHANNEL='bot-exporter-v1';
 const str=v=>typeof v==='string'?v:'';
 const safe=v=>str(v).normalize('NFC').replace(/[\\/:*?"<>|\x00-\x1f\x7f]/g,'_').replace(/^[.\s]+|[.\s]+$/g,'').slice(0,90)||'bot';
 function route(url){try{const u=new URL(url);if(u.origin==='https://tipsy.chat'){const id=root.TipsyExporterCore.roleId(url);return id?{platform:'tipsy',id,url:u.origin+u.pathname}:null;}if(u.origin==='https://character.ai'){const id=u.pathname.match(/^\/chat\/([\w-]{6,100})(?:\/|$)/)?.[1];return id?{platform:'character_ai',id,url:u.origin+u.pathname}:null;}}catch{}return null;}

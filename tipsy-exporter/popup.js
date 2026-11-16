@@ -1,6 +1,10 @@
 /* global BotModel, chrome */
 'use strict';
 
+let creator = false;
+let profileLink = null;
+const targetRoute = (value, id) => creator ? BotCreator.target(platform, id, value) : BotModel.route(value);
+
 const $ = id => document.getElementById(id);
 const selected = new Set();
 const siteNames = { tipsy: 'Tipsy', character_ai: 'Character.AI' };
@@ -89,24 +93,30 @@ function renderList() {
 async function readList(first = false) {
   if (reading || launching) return;
   reading = true;
-  $('status').textContent = 'Reading the chat sidebar…';
+  $('status').textContent = creator ? 'Reading your created characters…' : 'Reading the chat sidebar…';
   $('refresh-list').disabled = true;
+  $('chat-mode').disabled = $('creator-mode').disabled = true;
   updateSelection();
   try {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     platform = platformOf(tab?.url);
-    current = BotModel.route(tab.url);
+    current = creator ? null : BotModel.route(tab.url);
+    profileLink = null;
     let response;
     try {
-      response = await chrome.tabs.sendMessage(tab.id, { type: 'BOT_SIDEBAR' }, { frameId: 0 });
+      response = await chrome.tabs.sendMessage(tab.id, creator ? { type: 'BOT_CREATOR', action: 'list' } : { type: 'BOT_SIDEBAR' }, { frameId: 0 });
+      if (creator) {
+        profileLink = (await chrome.tabs.sendMessage(tab.id, { type: 'BOT_CREATOR', action: 'profile' }, { frameId: 0 })).url;
+        if (!response?.ok) throw Error('Open your own source profile, select Characters, then reopen RoleLeaf.');
+      }
     } catch {
-      throw Error('Reload the source page, then reopen RoleLeaf.');
+      throw Error(creator ? 'Open your own source profile, select Characters, then reopen RoleLeaf.' : 'Reload the source page, then reopen RoleLeaf.');
     }
     if (!response?.ok || response.platform !== platform || response.current?.id !== current?.id) {
       throw Error('The source page changed. Refresh the list.');
     }
     bots = response.bots.filter(bot => {
-      const route = BotModel.route(bot.url);
+      const route = targetRoute(bot.url, bot.id);
       return route?.platform === platform && route.id === bot.id && typeof bot.name === 'string';
     });
     const sidebarCount = bots.length;
@@ -115,8 +125,8 @@ async function readList(first = false) {
     }
     for (const id of selected) if (!bots.some(bot => bot.id === id)) selected.delete(id);
     if (first && current) selected.add(current.id);
-    $('identity').textContent = `${siteNames[platform]} · ${sidebarCount} characters in the sidebar`;
-    $('status').textContent = sidebarCount ? '' : 'Open the chat sidebar and refresh the list.';
+    $('identity').textContent = `${siteNames[platform]} · ${sidebarCount} ${creator ? 'created characters' : 'characters in the sidebar'}`;
+    $('status').textContent = creator ? (response.more ? 'Scroll down on your source profile and refresh to load more characters.' : sidebarCount ? '' : 'No saved characters on this profile.') : sidebarCount ? '' : 'Open the chat sidebar and refresh the list.';
     $('picker').hidden = !bots.length;
     renderList();
   } catch (error) {
@@ -129,6 +139,8 @@ async function readList(first = false) {
   } finally {
     reading = false;
     $('refresh-list').disabled = false;
+    $('chat-mode').disabled = $('creator-mode').disabled = false;
+    $('open-profile').hidden = !creator || !profileLink;
     updateSelection();
   }
 }
@@ -161,16 +173,16 @@ $('collect').onclick = async () => {
   let key;
   try {
     const source = await chrome.tabs.get(tab.id);
-    if (platformOf(source.url) !== platform || BotModel.route(source.url)?.id !== current?.id) {
+    if (platformOf(source.url) !== platform || (creator ? BotCreator.profile(source.url)?.url !== BotCreator.profile(tab.url)?.url : BotModel.route(source.url)?.id !== current?.id)) {
       throw Error('The source page changed. Refresh the list.');
     }
     let page = `collector.html?tab=${tab.id}`;
-    if (chosen.length !== 1 || chosen[0].id !== current?.id) {
+    if (creator || chosen.length !== 1 || chosen[0].id !== current?.id) {
       const jobId = crypto.randomUUID();
       key = `batch:${jobId}`;
       await chrome.storage.session.set({
         [key]: {
-          platform,
+          platform, creator,
           sourceTab: tab.id,
           currentId: current?.id ?? null,
           bots: chosen.map(({ id, name, url }) => ({ id, name, url })),
@@ -188,4 +200,25 @@ $('collect').onclick = async () => {
   }
 };
 
-readList(true);
+function setMode(value) {
+  if (reading || launching || creator === value) return;
+  creator = value;
+  selected.clear(); bots = []; $('search').value = ''; renderList();
+  $('chat-mode').setAttribute('aria-pressed', String(!creator));
+  $('creator-mode').setAttribute('aria-pressed', String(creator));
+  $('scope-note').textContent = creator ? 'Back up saved settings from your own profile. Each character gets a ZIP without chats.' :
+    'Each ZIP includes the character name, current chat, and chat images. The list comes from the chat sidebar on this page.';
+  void readList(!creator);
+}
+$('chat-mode').onclick = () => setMode(false);
+$('creator-mode').onclick = () => setMode(true);
+$('open-profile').onclick = async () => {
+  const profile = BotCreator.profile(profileLink);
+  if (!profile || profile.platform !== platform || reading || launching) return;
+  await chrome.tabs.update(tab.id, { url: profile.url });
+  window.close();
+};
+chrome.tabs.query({ active: true, currentWindow: true }).then(([active]) => {
+  if (BotCreator.profile(active?.url)) setMode(true);
+  else void readList(true);
+}).catch(() => { void readList(true); });

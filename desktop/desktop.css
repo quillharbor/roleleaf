@@ -54,3 +54,7 @@ input[type="checkbox"] { accent-color: #b5a5ff; vertical-align: middle; }
 .queue [data-state="error"] { color: #ffaaa7; }
 .text-button { background: transparent; border: 0; padding: 0; margin-top: 14px; color: #c5b4ff; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.export-scope { display:flex; gap:8px; }
+.export-scope button { flex:1; }
+.export-scope button[aria-pressed="true"] { color:#e4dbff; border-color:#9d8ccc; background:#40364f; }

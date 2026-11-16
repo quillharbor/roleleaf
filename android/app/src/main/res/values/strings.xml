@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RoleLeaf</string>
+    <string name="browser_back">Go back</string>
+    <string name="browser_reload">Reload page</string>
     <color name="roleleaf_icon_background">#171521</color>
 </resources>

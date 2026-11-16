@@ -12,22 +12,75 @@ function zip(files){
  const centralSize=central.reduce((n,c)=>n+c.length,0),end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,files.length,true);v.setUint16(10,files.length,true);v.setUint32(12,centralSize,true);v.setUint32(16,offset,true);const out=new Uint8Array(offset+centralSize+22);let at=0;for(const p of [...parts,...central,end]){out.set(p,at);at+=p.length;}return out;
 }
 async function sha(data){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes(data))),v=>v.toString(16).padStart(2,'0')).join('');}
+const characterIdPublicKey = Object.freeze({
+  "kty": "RSA",
+  "n": "p30vGS6EpLdpkzjWHV9pQr4DeDu8YVgWD09NqZxmy3dEP9NcyXtEpWTMvekAXQ96uVe9PAdUNayA7A48oaRpp43nJH9ccEvAiUGbbhqotIzsZgMrzHEdcOhBPryTCPXfFuza2LnH3oKAqVXOeP4ijnGD1APzLzwdMNfaZi7napdRULdPF6NBKnyGixGA7tzdbljgf7-7YynmTTjaZ1CtuNM5_cRJKLOTYs6Ia9nvTFp3VJJYVE1MTG65SAz4jlHb_Uk6HViamOHXOH3vYS1Uxi-U5Y7TLvBWQ7lSR_ht7N6bTLoSH0li7ngd0B7R4A7Ys3h8AO-1FHW5RynPfhSN3Q",
+  "e": "AQAB"
+});
+let importedCharacterIdKey;
+async function encryptCharacterId(platform, id) {
+  const valid = platform === 'tipsy' ? /^\d{6,30}$/ : platform === 'character_ai' ? /^[\w-]{6,100}$/ : null;
+  if (typeof id !== 'string' || !valid?.test(id)) throw Error('Invalid character identity');
+  const algorithm = 'RSA-OAEP';
+  importedCharacterIdKey ??= crypto.subtle.importKey(
+    'jwk', characterIdPublicKey, { name: algorithm, hash: 'SHA-256' }, false, ['encrypt']
+  );
+  const canonical = JSON.stringify(['roleleaf-character-id-v1', platform, id]);
+  const identity = await crypto.subtle.digest('SHA-256', enc.encode(canonical));
+  const encrypted = await crypto.subtle.encrypt({ name: algorithm }, await importedCharacterIdKey, identity);
+  const ciphertext = Array.from(new Uint8Array(encrypted), byte => byte.toString(16).padStart(2, '0')).join('');
+  return { scheme: 'rsa-oaep-sha256-hex-v1', key_id: 'roleleaf-id-1', ciphertext };
+}
 function imageType(b){if(b.length>=8&&b[0]===137&&b[1]===80&&b[2]===78&&b[3]===71)return 'png';if(b[0]===255&&b[1]===216&&b[2]===255)return 'jpg';if(String.fromCharCode(...b.slice(0,6)).match(/^GIF8[79]a$/))return 'gif';if(String.fromCharCode(...b.slice(0,4))==='RIFF'&&String.fromCharCode(...b.slice(8,12))==='WEBP')return 'webp';throw Error('Image must be PNG, JPEG, GIF, or WebP');}
 function mediaURL(url){try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password&&['img.tipsy.chat','characterai.io'].includes(u.hostname);}catch{return false;}}
 async function downloadImage(url,signal){if(!mediaURL(url))throw Error('Media host is not allowed or URL is invalid');const r=await fetch(url,{credentials:'omit',redirect:'error',signal});if(!r.ok)throw Error('Image HTTP '+r.status);const reader=r.body.getReader();let size=0;const chunks=[];try{while(true){const x=await reader.read();if(x.done)break;size+=x.value.length;if(size>16*1024*1024)throw Error('Image exceeds 16 MB');chunks.push(x.value);}const data=new Uint8Array(size);let at=0;for(const c of chunks){data.set(c,at);at+=c.length;}return {data,ext:imageType(data)};}finally{await reader.cancel().catch(()=>{});reader.releaseLock();}}
+// Conversation payloads can repeat structured profile data in their source
+// metadata. Keep the chat and its media, while omitting those profile fields.
+const characterMetadata = /^(?:bot(?:_?id|_?name|_?profile|_?url)?|character(?:_?id|_?name|_?url|_?profile|_?card|_?info)?|external_?id|prefetchedCharacterDetailed)$/i;
+function chatMetadata(value, model) {
+ if (Array.isArray(value)) return value.map(item => chatMetadata(item, model));
+ if (!value || typeof value !== 'object') return value;
+ return Object.fromEntries(Object.entries(value).flatMap(([key, item]) => {
+  if (characterMetadata.test(key)) return [];
+  if (item === model.id && /(?:id|identifier)$/i.test(key)) return [];
+  if (typeof item === 'string' && /url$/i.test(key) && M.route(item)?.id === model.id) return [];
+  return [[key, chatMetadata(item, model)]];
+ }));
+}
+
 async function build({model,conversations,scope,assets,files:assetFiles,cardPNG,started,stopped=false,warnings=[]}){
+ const creator=scope.actual==='creator_character';
+ if(creator && conversations.length)throw Error('Creator packages cannot contain conversations');
+ const characterId = await encryptCharacterId(model.platform, model.id);
+ if (!creator) {
+  assets = assets.filter(asset => asset.role === 'message_image');
+  const chatPaths = new Set(assets.filter(asset => asset.status === 'saved').map(asset => asset.path));
+  assetFiles = assetFiles.filter(file => chatPaths.has(file.path));
+  conversations = conversations.map(conversation => chatMetadata(conversation, model));
+  scope = chatMetadata(scope, model);
+ }
  const files=[...assetFiles],put=(path,data)=>files.push({path,data:typeof data==='string'?data:json(data)});
- const missing=Object.entries(model.fields).filter(([,f])=>!['available','empty'].includes(f.status)).map(([field,f])=>({field,status:f.status,source:f.source}));
- const report={schema:'bot_package_report_v1',character:{status:missing.length?'partial':'captured_fields',missing},images:{status:assets.some(a=>a.status!=='saved')?'partial':assets.length?'complete':'not_found',assets},chats:{status:conversations.length&&conversations.every(c=>c.completeness.complete_current_mainline)?'captured_mainlines_complete':'partial',scope,conversations:conversations.map(c=>({id:c.id,...c.completeness})),all_regeneration_variants_verified:false},stopped,warnings:[...model.warnings,...warnings]};
- const character={...model};delete character.card;delete character.source;character.assets=assets;
- put('character/character.json',character);put('character/card.json',model.card);put('provenance/source.json',model.source);if(cardPNG)files.push({path:'character/card.png',data:cardPNG});else report.warnings.push('The PNG character card is unavailable. The JSON card is included.');
+ const missing=Object.entries(creator ? model.fields : {}).filter(([,f])=>!['available','empty'].includes(f.status)).map(([field,f])=>({field,status:f.status,source:f.source}));
+ const report={schema:'bot_package_report_v1',character:{status:creator?(missing.length?'partial':'captured_fields'):'name_only',missing},images:{status:assets.some(a=>a.status!=='saved')?'partial':assets.length?'complete':'not_found',assets},chats:{status:creator?'not_requested':conversations.length&&conversations.every(c=>c.completeness.complete_current_mainline)?'captured_mainlines_complete':'partial',scope,conversations:conversations.map(c=>({id:c.id,...c.completeness})),all_regeneration_variants_verified:false},stopped,warnings:creator?[...model.warnings,...warnings]:[...warnings]};
+ if (creator) {
+  const { card, source, ...character } = model;
+  put('character/character.json', { ...character, assets });
+  put('character/card.json', card);
+  put('provenance/source.json', source);
+  if (cardPNG) files.push({ path: 'character/card.png', data: cardPNG });
+  else report.warnings.push('The PNG character card is unavailable. The JSON card is included.');
+ } else {
+  put('character/character.json', { name: model.name });
+ }
  for(const[cIndex,c]of conversations.entries()){const folder=`conversations/${cIndex+1}-${M.safe(c.id)}`;put(folder+'/messages.json',c);put(folder+'/transcript.txt',M.transcript(c));}
  put('provenance/report.json',report);
  const imgHTML=assets.filter(a=>a.status==='saved').map(a=>`<figure><img src="${escape(a.path)}" alt="${escape(a.role)}"><figcaption>${escape(a.role)}</figcaption></figure>`).join('');
  const chatHTML=conversations.map(c=>`<details><summary>Chat ${escape(c.id)} · ${c.messages.length} messages · ${c.completeness.complete_current_mainline?'Current thread complete':'Partial history'}</summary>${c.messages.map(m=>`<article><small>${escape(m.role)} · ${escape(m.timestamp)}</small><pre>${escape(m.content??'Selected reply is unknown. See the JSON.')}</pre>${m.candidates.length?`<details><summary>${m.candidates.length} reply candidates</summary>${m.candidates.map(x=>`<pre>${escape(x.raw_content)}</pre>`).join('')}</details>`:''}</article>`).join('')}</details>`).join('');
- put('README.html',`<!doctype html><html lang="en"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' file:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>${escape(model.name)} · RoleLeaf export</title><style>body{max-width:960px;margin:40px auto;padding:0 24px;background:#141621;color:#e6e8f2;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:#202331;padding:16px;border-radius:12px}img{max-width:240px;max-height:300px}figure{display:inline-block;margin:8px}summary{cursor:pointer;padding:14px;background:#292b42;margin:12px 0}small{color:#aeb3cf}article{border-bottom:1px solid #363b50;padding:16px 0}</style><h1>${escape(model.name)}</h1><p>${escape(model.platform)} · ${escape(model.id)}</p><p>Covers the current chat. Other chats and archives are unverified.${stopped?' Export stopped. Available data was saved.':''}</p><p>Character: ${escape(report.character.status)} · Images: ${escape(report.images.status)} · Chat: ${escape(report.chats.status)}</p><h2>Coverage and missing content</h2><ul>${[...missing.map(x=>x.field+': '+x.status),...report.warnings].map(x=>'<li>'+escape(x)+'</li>').join('')}</ul><h2>Character details</h2>${Object.entries(model.fields).map(([k,f])=>`<details><summary>${escape(k)} · ${escape(f.status)}</summary><pre>${escape(typeof f.value==='string'?f.value:json(f.value))}</pre></details>`).join('')}<h2>Images</h2>${imgHTML}<h2>Chat</h2>${chatHTML}</html>`);
+ const characterHTML = creator ? '<h2>Character details</h2>' + Object.entries(model.fields)
+  .map(([key, field]) => `<details><summary>${escape(key)} · ${escape(field.status)}</summary><pre>${escape(typeof field.value==='string'?field.value:json(field.value))}</pre></details>`).join('') : '';
+ put('README.html',`<!doctype html><html lang="en"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' file:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>${escape(model.name)} · RoleLeaf export</title><style>body{max-width:960px;margin:40px auto;padding:0 24px;background:#141621;color:#e6e8f2;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:#202331;padding:16px;border-radius:12px}img{max-width:240px;max-height:300px}figure{display:inline-block;margin:8px}summary{cursor:pointer;padding:14px;background:#292b42;margin:12px 0}small{color:#aeb3cf}article{border-bottom:1px solid #363b50;padding:16px 0}</style><h1>${escape(model.name)}</h1><p>${escape(model.platform)}</p><p>${creator?'Creator backup from the source editor. Chats are outside this export.':'Covers the current chat. Other chats and archives are unverified.'}${stopped?' Export stopped. Available data was saved.':''}</p><p>Character: ${escape(report.character.status)} · Images: ${escape(report.images.status)} · Chat: ${escape(report.chats.status)}</p><h2>Coverage and missing content</h2><ul>${[...missing.map(x=>x.field+': '+x.status),...report.warnings].map(x=>'<li>'+escape(x)+'</li>').join('')}</ul>${characterHTML}<h2>Images</h2>${imgHTML}${creator?'':'<h2>Chat</h2>'+chatHTML}</html>`);
  const index=[];for(const file of files)index.push({path:file.path,bytes:bytes(file.data).length,sha256:await sha(file.data)});
- const manifest={schema:'bot_package_v1',exporter_version:M.VERSION,platform:model.platform,bot_id:model.id,name:model.name,source_url:model.source_url,started_at:started,finished_at:new Date().toISOString(),scope,complete:report.character.status==='captured_fields'&&report.images.status==='complete'&&report.chats.status==='captured_mainlines_complete'&&scope.conversation_list_complete===true,files:index,index_excludes:['manifest.json'],report:'provenance/report.json'};put('manifest.json',manifest);
+ const manifest={schema:'bot_package_v1',exporter_version:M.VERSION,platform:model.platform,character_id:characterId,is_creator:creator,name:model.name,started_at:started,finished_at:new Date().toISOString(),scope,complete:creator ? report.character.status==='captured_fields'&&report.images.status==='complete' : !stopped&&report.images.status!=='partial'&&report.chats.status==='captured_mainlines_complete'&&scope.conversation_list_complete===true,files:index,index_excludes:['manifest.json'],report:'provenance/report.json'};put('manifest.json',manifest);
  return {files,manifest,report,bytes:zip(files)};
 }
 root.BotPackage=Object.freeze({zip,sha,build,downloadImage,mediaURL,imageType,pathOK});

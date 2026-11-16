@@ -40,3 +40,7 @@
 .queue-status.saved { color: #99d9be; }
 .queue-status.partial { color: #e5bc83; }
 .queue-status.running { color: #c1afff; }
+
+.export-scope { display:flex; gap:8px; margin-bottom:8px; }
+.export-scope button { flex:1; }
+.export-scope button[aria-pressed="true"] { color:#e4dbff; border-color:#9d8ccc; background:#40364f; }

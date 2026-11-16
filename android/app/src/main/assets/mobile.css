@@ -52,3 +52,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .stats div { display: grid; text-align: center; color: var(--muted); }
 .stats strong { font-size: 19px; color: #efebf7; }
 .dialog-actions { margin-top: 14px; }
+
+.export-scope { display:flex; gap:8px; margin-bottom:8px; }
+.export-scope button { flex:1; min-height:40px; }
+.export-scope button[aria-pressed="true"] { color:#e4dbff; border-color:#9d8ccc; background:#40364f; }
+#open-profile { margin:12px 0; }
+#status { white-space:pre-line; }

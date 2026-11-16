@@ -1,6 +1,6 @@
 {
   "name": "roleleaf",
-  "version": "0.5.4",
+  "version": "0.5.7",
   "private": true,
   "description": "Export AI character data and conversations, with explicit provenance and completeness.",
   "engines": {
@@ -15,7 +15,9 @@
     "desktop:check-release": "node scripts/desktop-release.cjs check",
     "package:desktop:test": "node scripts/desktop-release.cjs test",
     "package:desktop:release": "node scripts/desktop-release.cjs release",
-    "package:android:test": "node scripts/package-android.cjs"
+    "package:android:test": "node scripts/package-android.cjs",
+    "package:android:demo": "node scripts/package-android.cjs --demo",
+    "package:demo-site": "node scripts/package-demo-site.cjs"
   },
   "devDependencies": {
     "@electron/asar": "3.4.1",

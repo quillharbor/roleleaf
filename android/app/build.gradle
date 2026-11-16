@@ -3,21 +3,36 @@ plugins { id 'com.android.application' }
 android {
     signingConfigs {
         debug { storeFile rootProject.file('.signing/debug.keystore') }
+        demo {
+            def keyPath = System.getenv('ROLELEAF_DEMO_KEYSTORE')
+            if (keyPath) {
+                storeFile file(keyPath)
+                storePassword System.getenv('ROLELEAF_DEMO_STORE_PASSWORD')
+                keyAlias 'roleleaf-demo'
+                keyPassword System.getenv('ROLELEAF_DEMO_STORE_PASSWORD')
+            }
+        }
     }
     namespace 'io.github.quillharbor.roleleaf.test'
     compileSdk 35
     defaultConfig {
-        applicationId 'io.github.quillharbor.roleleaf.test'
+        applicationId 'io.github.quillharbor.roleleaf.demo'
         minSdk 26
         targetSdk 35
-        versionCode 15
-        versionName '0.5.4-android.15'
+        versionCode 22
+        versionName '0.5.7-demo.22'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
     buildFeatures { buildConfig true }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.demo
+            debuggable false
+        }
+    }
     sourceSets.main.assets.srcDirs += ['build/generated/assets']
 }
 
@@ -27,7 +42,7 @@ tasks.register('syncExporterAssets', Sync) {
     into layout.buildDirectory.dir('generated/assets')
     from('../../tipsy-exporter') {
         into 'shared'
-        include 'core.js', 'chat.js', 'png.js', 'bot-model.js', 'bot-package.js', 'collect-bot.js'
+        include 'core.js', 'chat.js', 'png.js', 'bot-model.js', 'bot-creator.js', 'bot-package.js', 'collect-bot.js'
         include 'page.bundle.js', 'bridge.bundle.js', 'cai-page.bundle.js', 'cai-bridge.bundle.js'
     }
     from('../../assets/brand/roleleaf-avatar-v1/roleleaf-anime-avatar.png') {

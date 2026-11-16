@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.provider.DocumentsContract;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.LruCache;
 import android.view.View;
@@ -68,6 +69,8 @@ public class MainActivity extends Activity {
     private LinearLayout browser;
     private LinearLayout platforms;
     private Button tipsyButton, caiButton, exportButton;
+    private Button browserBack, browserReload;
+    private TextView browserHost;
     private String platform = "tipsy", pendingSave, pendingReload, pendingFolder;
     private boolean busy, pickerOpen, panelReady, supported, destroyed;
     private File zip;
@@ -137,12 +140,20 @@ public class MainActivity extends Activity {
         equal(platforms,tipsyButton); equal(platforms,caiButton);
         LinearLayout toolbar = row();
         toolbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        TextView title = new TextView(this);
-        title.setText(R.string.app_name);
-        title.setTextSize(17);
-        title.setTextColor(Color.rgb(233,225,255));
-        title.setPadding(dp(8),0,dp(4),0);
-        toolbar.addView(title, new LinearLayout.LayoutParams(0,-2,1));
+        browserBack = navigationButton("←", R.string.browser_back, this::goBackInBrowser);
+        toolbar.addView(browserBack, new LinearLayout.LayoutParams(dp(44),dp(44)));
+        browserHost = new TextView(this);
+        browserHost.setTextSize(13);
+        browserHost.setTextColor(Color.rgb(233,225,255));
+        browserHost.setSingleLine(true);
+        browserHost.setEllipsize(TextUtils.TruncateAt.END);
+        browserHost.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        browserHost.setPadding(dp(8),0,dp(6),0);
+        toolbar.addView(browserHost, new LinearLayout.LayoutParams(0,dp(44),1));
+        browserReload = navigationButton("↻", R.string.browser_reload, this::reloadBrowser);
+        LinearLayout.LayoutParams reloadParams = new LinearLayout.LayoutParams(dp(44),dp(44));
+        reloadParams.setMarginEnd(dp(6));
+        toolbar.addView(browserReload,reloadParams);
         Button openZip = button("Open ZIP", this::chooseZip);
         LinearLayout.LayoutParams openParams = new LinearLayout.LayoutParams(-2,dp(44));
         openParams.setMarginEnd(dp(6));
@@ -163,6 +174,41 @@ public class MainActivity extends Activity {
             }
         });
         panel.loadUrl(LOCAL + "/assets/index.html"); showSite();
+    }
+
+    private Button navigationButton(String symbol, int description, Runnable action) {
+        Button button = button(symbol, action);
+        button.setTextSize(20);
+        button.setContentDescription(getString(description));
+        button.setPadding(0,0,0,0);
+        return button;
+    }
+
+    private WebView activeBrowserPage() { return popup != null ? popup : source; }
+
+    private boolean goBackInBrowser() {
+        if (busy || pickerOpen) return false;
+        WebView page = activeBrowserPage();
+        if (page != null && page.canGoBack()) { page.goBack(); return true; }
+        if (popup == null) return false;
+        closePopup();
+        return true;
+    }
+
+    private void reloadBrowser() {
+        WebView page = activeBrowserPage();
+        if (!busy && !pickerOpen && page != null) page.reload();
+    }
+
+    private void updateBrowserToolbar() {
+        WebView page = activeBrowserPage();
+        if (destroyed || browserHost == null || page == null) return;
+        String url = page.getUrl();
+        String host = url == null ? null : Uri.parse(url).getHost();
+        browserHost.setText(host == null ? Uri.parse(origin()).getHost() : host);
+        boolean canGoBack = popup != null || page.canGoBack();
+        browserBack.setEnabled(canGoBack);
+        browserBack.setAlpha(canGoBack ? 1f : 0.45f);
     }
 
     private void settings(WebView web) {
@@ -260,8 +306,12 @@ public class MainActivity extends Activity {
             @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap icon) {
                 failCaptures(view, "The page changed. Try again.");
             }
+            @Override public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+                if (view == activeBrowserPage()) updateBrowserToolbar();
+            }
             @Override public void onPageFinished(WebView view,String url) {
                 CookieManager.getInstance().flush();
+                if (view == activeBrowserPage()) updateBrowserToolbar();
                 if (view == worker && pendingReload != null && url.equals(view.getUrl())) {
                     String id = pendingReload; pendingReload = null; respond(id,true);
                 }
@@ -277,7 +327,9 @@ public class MainActivity extends Activity {
             @Override public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, Message result) {
                 if (!userGesture || pickerOpen || view != source || popup != null) return false;
                 popup = createSource(false); content.addView(popup,new FrameLayout.LayoutParams(-1,-1));
-                ((WebView.WebViewTransport)result.obj).setWebView(popup); result.sendToTarget(); return true;
+                ((WebView.WebViewTransport)result.obj).setWebView(popup); result.sendToTarget();
+                updateBrowserToolbar();
+                return true;
             }
             @Override public void onCloseWindow(WebView view) { if (view == popup) { closePopup(); source.reload(); } }
         });
@@ -301,7 +353,7 @@ public class MainActivity extends Activity {
                 String page = asset("shared/" + (tipsy ? "page.bundle.js" : "cai-page.bundle.js"));
                 String bridge = asset("shared/" + (tipsy ? "bridge.bundle.js" : "cai-bridge.bundle.js"));
                 String script = "(()=>{if(window!==top)return;const listeners=[];const chrome={runtime:{id:'android',onMessage:{addListener:f=>listeners.push(f)}}};\n"
-                        + page + "\n;" + bridge + "\n;window.__botAndroidRequest=(id,message)=>{let done=false;const reply=result=>{if(done)return;done=true;CaptureReply.postMessage(JSON.stringify({id,result}));};const pending=listeners.map(f=>f(message,{id:'android'},reply)).includes(true);if(!done&&!pending)reply({ok:false,reason:'unavailable'});};})();";
+                        + page + "\n;" + bridge + "\n;" + asset(tipsy ? "tipsy-list.js" : "cai-list.js") + "\n;window.__botAndroidRequest=(id,message)=>{let done=false;const reply=result=>{if(done)return;done=true;CaptureReply.postMessage(JSON.stringify({id,result}));};const pending=listeners.map(f=>f(message,{id:'android'},reply)).includes(true);if(!done&&!pending)reply({ok:false,reason:'unavailable'});};})();";
                 WebViewCompat.addDocumentStartJavaScript(web,script,set(site));
             }
         }
@@ -311,7 +363,13 @@ public class MainActivity extends Activity {
         try (InputStream input = getAssets().open(name)) { ByteArrayOutputStream out = new ByteArrayOutputStream(); copy(input,out); return out.toString("UTF-8"); }
         catch (Exception e) { throw new IllegalStateException("Export resources are missing",e); }
     }
-    private void closePopup() { if (popup != null) { content.removeView(popup); popup.destroy(); popup = null; } }
+    private void closePopup() {
+        if (popup == null) return;
+        content.removeView(popup);
+        popup.destroy();
+        popup = null;
+        updateBrowserToolbar();
+    }
     private void chooseZip() {
         Intent choose = new Intent(Intent.ACTION_OPEN_DOCUMENT)
                 .addCategory(Intent.CATEGORY_OPENABLE)
@@ -351,6 +409,7 @@ public class MainActivity extends Activity {
         paintButton(caiButton, platform.equals("character_ai"));
         tipsyButton.setSelected(platform.equals("tipsy"));
         caiButton.setSelected(platform.equals("character_ai"));
+        updateBrowserToolbar();
     }
     private void openPicker() {
         if (pickerOpen || popup != null) return;
@@ -371,6 +430,9 @@ public class MainActivity extends Activity {
         exportButton.requestFocus();
     }
     private void openWorkerPage(String id, String url) throws IOException {
+        openWorkerPage(id, url, false);
+    }
+    private void openWorkerPage(String id, String url, boolean listPage) throws IOException {
         if (!pickerOpen) throw new IOException("Open Batch export first");
         if (pendingReload != null) throw new IOException("The export page is loading");
         if (worker == null) {
@@ -379,6 +441,11 @@ public class MainActivity extends Activity {
             // Keep the page attached for the site's virtual scrolling during export.
             content.addView(worker, 0, new FrameLayout.LayoutParams(-1,-1));
         }
+        // A mobile C.AI home omits Recent entirely. Only the hidden list page
+        // uses a desktop viewport; the visible browser keeps its mobile layout.
+        worker.setLayoutParams(new FrameLayout.LayoutParams(listPage ? dp(1100) : -1, -1));
+        worker.getSettings().setUseWideViewPort(listPage);
+        worker.getSettings().setLoadWithOverviewMode(listPage);
         pendingReload = id; worker.loadUrl(url);
         main.postDelayed(() -> {
             if (id.equals(pendingReload)) { pendingReload = null; reject(id,"Export page took too long to load"); }
@@ -419,7 +486,35 @@ public class MainActivity extends Activity {
                     respond(id,true); break;
                 case "capture": capture(id,p.getJSONObject("message"),p.optBoolean("worker") ? worker : source); break;
                 case "openRecent": openWorkerPage(id,startUrl()); break;
+                case "openCaiList": {
+                    String scope = p.optString("scope");
+                    if (!platform.equals("character_ai") || !set("recent", "creator").contains(scope))
+                        throw new IOException("Invalid list scope");
+                    String url = p.optString("url", "");
+                    if (!url.isEmpty() && (!scope.equals("creator") ||
+                        !url.matches("https://character\\.ai/profile/[A-Za-z0-9_.-]{1,100}")))
+                        throw new IOException("Invalid profile address");
+                    openWorkerPage(id, url.isEmpty() ? origin() + "/" : url, true);
+                    break;
+                }
                 case "closeWorker": closeWorker(); respond(id,true); break;
+                case "openCreatorProfile":
+                case "openCreatorWorker": {
+                    String url = p.getString("url");
+                    Uri page = Uri.parse(url);
+                    String path = page.getPath();
+                    boolean profile = path != null && (platform.equals("tipsy")
+                        ? path.matches("(?i)/(?:[a-z]{2}(?:-[a-z]{2})?/)?profile/[0-9]{6,30}/?")
+                        : path.matches("/profile(?:/[A-Za-z0-9_.-]{1,100})?/?"));
+                    boolean editor = path != null && platform.equals("character_ai") && path.matches("/character/[A-Za-z0-9_-]{6,100}/edit/?");
+                    if (!origin().equals(page.getScheme() + "://" + page.getEncodedAuthority()) ||
+                        page.getEncodedQuery() != null || page.getEncodedFragment() != null ||
+                        (!profile && (!editor || method.equals("openCreatorProfile")))) throw new IOException("Invalid creator page address");
+                    if (method.equals("openCreatorProfile")) {
+                        dismissPicker(); source.loadUrl(url); respond(id,true);
+                    } else openWorkerPage(id,url);
+                    break;
+                }
                 case "openChatPage": {
                     String url = p.getString("url");
                     Uri chat = Uri.parse(url);
@@ -486,12 +581,14 @@ public class MainActivity extends Activity {
         if (view == null || view.getUrl() == null) throw new IOException("Open a chat on the source site first");
         Uri current = Uri.parse(view.getUrl());
         if (!origin().equals(current.getScheme()+"://"+current.getHost())) throw new IOException("Open a chat on the source site first");
-        if (!set("BOT_SIDEBAR","TIPSY_GET_CURRENT","TIPSY_CHAT","BOT_CAI").contains(message.optString("type"))) throw new IOException("Unsupported capture request");
-        if (message.has("action") && !set("status","start","cancel","export").contains(message.getString("action"))) throw new IOException("Invalid capture action");
+        if (!set("BOT_SIDEBAR","TIPSY_GET_CURRENT","TIPSY_CHAT","BOT_CAI","BOT_CREATOR","BOT_ANDROID_LIST").contains(message.optString("type"))) throw new IOException("Unsupported capture request");
+        boolean creator = message.optString("type").equals("BOT_CREATOR");
+        if (creator ? !set("profile","list","open_editor","read").contains(message.optString("action")) :
+            message.has("action") && !set("status","start","cancel","export").contains(message.optString("action"))) throw new IOException("Invalid capture action");
         if (captures.size() >= 4) throw new IOException("Too many capture requests");
         String key = UUID.randomUUID().toString(); captures.put(key,new Capture(id,view));
         view.evaluateJavascript("window.__botAndroidRequest&&window.__botAndroidRequest("+JSONObject.quote(key)+","+message+")",null);
-        main.postDelayed(() -> { Capture waiting = captures.remove(key); if (waiting != null) reject(waiting.request,"Chat capture is unavailable. Refresh the chat page and try again."); },8000);
+        main.postDelayed(() -> { Capture waiting = captures.remove(key); if (waiting != null) reject(waiting.request,"Source capture is unavailable. Refresh the page and try again."); },message.optString("action").equals("open_editor") ? 15000 : 8000);
     }
     private File imageFile(String id) throws IOException {
         if (!id.matches("[a-f0-9-]{36}")) throw new IOException("Invalid image ID");

@@ -13,6 +13,7 @@
     <p id="identity">Detecting the source site…</p>
   </header>
   <main>
+    <div class="actions export-scope"><button id="chat-mode" type="button" aria-pressed="true">Recent chats</button><button id="creator-mode" type="button" aria-pressed="false">My Characters</button></div>
     <p id="status" role="status" aria-live="polite"></p>
     <section id="picker" hidden aria-label="Chat list">
       <input id="search" type="search" aria-label="Search characters" placeholder="Search by name or ID">
@@ -27,14 +28,16 @@
       <span id="selected-count" aria-live="polite">0 selected</span>
       <button id="collect" class="primary" type="button" disabled>Export characters</button>
     </footer>
-    <p class="footnote">Each character gets a ZIP with its card, images, and current chat. The list comes from the chat sidebar on this page.</p>
+    <p class="footnote" id="scope-note">Each ZIP includes the character name, current chat, and chat images. The list comes from the chat sidebar on this page.</p>
     <div class="actions">
+      <button id="open-profile" class="link" type="button" hidden>Open my profile</button>
       <button id="refresh-list" class="link" type="button">Refresh list</button>
       <button id="refresh-page" class="link" type="button">Reload source page</button>
     </div>
   </main>
   <script src="core.js"></script>
   <script src="bot-model.js"></script>
+  <script src="bot-creator.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

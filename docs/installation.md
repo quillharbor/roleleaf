@@ -1,27 +1,33 @@
-# Install RoleLeaf
+# Try RoleLeaf Demo
 
-Use the three artifacts from the same candidate release and compare their hashes with `SHA256SUMS`.
-
-## Chrome
-
-1. Extract `RoleLeaf-0.5.4.zip`.
-2. Open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked**.
-3. Select the extracted `tipsy-exporter/` directory. Check that the extension displays version 0.5.4.
-
-After an update, reload the extension and refresh the source site's chat page. Do not scroll manually to the first message; let the exporter collect pages and report any gaps.
-
-## macOS
-
-The reviewed DMG targets **macOS 13+ on Apple Silicon**. Open `RoleLeaf-TEST-ONLY-0.5.4-arm64.dmg` and drag RoleLeaf to Applications. It is a development build with ad-hoc signing, not a Developer ID signed or notarized release. Gatekeeper may prevent opening it; use a local source build or wait for a signed release if needed.
-
-This candidate uses a new application identifier. Existing app sessions and saved settings are not migrated automatically; exported ZIPs remain ordinary files. Windows, Linux and Intel installers are not included in this review.
+The demo is downloaded directly. No official app-store installation is offered.
 
 ## Android
 
-Install `RoleLeaf-TEST-ONLY-0.5.4-android.15.apk` on Android 8 or later. Allow installation from the file manager only if prompted and if you trust this test build. Keep System WebView updated and keep RoleLeaf in the foreground while exporting.
+1. Open the download page in your phone browser, or scan its Android QR code using your phone camera. Download the file ending in `.apk`.
+2. Open the completed download. If Android asks, allow **this browser** to install unknown apps, then return to the installer and confirm installation. Manufacturer wording varies. If an in-app browser blocks the download, open the page in your system browser.
+3. Open RoleLeaf, sign in to Tipsy or Character.AI, then use Batch Export. Keep Android System WebView updated and the app in the foreground while exporting.
 
-This candidate has its own application ID and debug signing key. It installs separately from builds with another ID. Future debug builds signed with a different key may require uninstalling the prior test app, which deletes that app's local sessions.
+Android 8 or later is required. This is a Demo, not a Google Play release. The dedicated demo application ID is `io.github.quillharbor.roleleaf.demo`. It installs separately from earlier private test builds; sessions do not migrate automatically. Later demos must keep the same signing key and application ID and use a higher versionCode so they can update in place. Do not uninstall the demo just to update it.
+
+The device still requires installation confirmation. A QR code cannot bypass system security checks; support varies with device policy, region and developer-verification requirements.
+
+## Chrome on a computer
+
+1. Download the Chrome ZIP and **extract it** to a permanent folder such as Documents/RoleLeaf. Do not select the ZIP itself.
+2. Paste `chrome://extensions` in Chrome's address bar and turn on **Developer mode** at the top right.
+3. Choose **Load unpacked** and select the extracted **tipsy-exporter** folder containing `manifest.json`. Confirm version **0.5.7**, then pin RoleLeaf from the puzzle-piece Extensions menu.
+4. Open or refresh Tipsy or Character.AI, sign in, then click RoleLeaf. Keep the source and export tabs open until export completes.
+
+Chrome for Android does not support this desktop extension; use the Android demo instead. An administrator-managed browser may prohibit Developer mode.
+
+### Update the local extension
+
+Extract the new ZIP elsewhere, replace the contents of your existing `tipsy-exporter` folder, and click **Reload** on the RoleLeaf card at `chrome://extensions`. Refresh the source website too. Keep that permanent folder: moving or deleting it breaks the local extension. This method does not receive Chrome Web Store automatic updates.
 
 ## Troubleshooting
 
-Sign in to the source site, open the intended conversation, refresh the character list and retry. A partial-history warning is meaningful: retain the available export and report the platform, version and error message. Do not post account credentials, private chat contents, HAR files or unredacted screenshots.
+- “Manifest missing”: select the inner `tipsy-exporter` folder, not the ZIP or its outer folder.
+- No characters: verify you are signed in to the correct source account. On Android, entering Recent or My Characters requests the list automatically; site failures or expired sessions can still prevent loading.
+- Partial export: read the coverage report in the ZIP; do not assume a successful download means all chat history was returned.
+- Send only the platform, version and redacted error when reporting a problem. Never share credentials or private exports.

@@ -1,6 +1,6 @@
 {
   "name": "roleleaf",
-  "version": "0.5.4",
+  "version": "0.5.7",
   "private": true,
   "main": "main.cjs",
   "scripts": {

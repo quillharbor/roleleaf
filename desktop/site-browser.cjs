@@ -4,6 +4,7 @@ const { app, BrowserView, BrowserWindow, WebContentsView, ipcMain, session } = r
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+require('../tipsy-exporter/bot-creator.js');
 const { randomUUID } = require('node:crypto');
 
 const origins = { tipsy: 'https://tipsy.chat', character_ai: 'https://character.ai' };
@@ -44,7 +45,8 @@ google.co.ve google.co.vi google.com.vn google.vu google.ws google.rs google.co.
 google.co.zw google.cat
 `.trim().split(/\s+/));
 const googleCookieDomain = /(^|\.)(google|youtube)\.com$/i;
-const types = new Set(['BOT_SIDEBAR', 'TIPSY_GET_CURRENT', 'TIPSY_CHAT', 'BOT_CAI']);
+const types = new Set(['BOT_SIDEBAR', 'TIPSY_GET_CURRENT', 'TIPSY_CHAT', 'BOT_CAI', 'BOT_CREATOR']);
+const creatorActions = new Set(['profile', 'list', 'open_editor', 'read']);
 const actions = new Set(['status', 'start', 'cancel', 'export']);
 const webPreferences = { sandbox: true, contextIsolation: true, nodeIntegration: false, webSecurity: true };
 
@@ -299,16 +301,19 @@ function attachSiteBrowser(window, authorize) {
     if (!contents || url?.origin !== origins[active]) throw Error('Chat page is unavailable.');
     return { id, url: url.href };
   });
-  handle('site-worker', value => {
+  handle('site-worker', async value => {
     const url = urlOf(value);
-    if (!active || url?.origin !== origins[active] || !/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?chat\/[\w-]+\/?$/i.test(url.pathname)) {
-      throw Error('The chat link belongs to a different platform.');
+    if (!active || url?.origin !== origins[active] || (!globalThis.BotCreator.profile(value) && !globalThis.BotCreator.editor(value) && !/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?chat\/[\w-]+\/?$/i.test(url.pathname))) {
+      throw Error('The source link is unavailable for this platform.');
     }
     const view = create(active, true);
     const contents = view.webContents;
     const id = contents.id;
     workers.set(id, view);
-    void load(contents, url.href).catch(() => {});
+    if (globalThis.BotCreator.profile(url.href)) {
+      try { await load(contents, url.href); }
+      catch (error) { workers.delete(id); view.destroy(); throw error; }
+    } else void load(contents, url.href).catch(() => {});
     return id;
   });
   handle('site-close', id => {
@@ -318,10 +323,10 @@ function attachSiteBrowser(window, authorize) {
   handle('site-request', (id, message) => {
     const contents = contentsFor(id);
     if (!contents || urlOf(contents.getURL())?.origin !== origins[active] || !types.has(message?.type) ||
-        (message.action && !actions.has(message.action))) return { ok: false, reason: 'unavailable' };
+        (message.type === 'BOT_CREATOR' ? !creatorActions.has(message.action) : message.action && !actions.has(message.action))) return { ok: false, reason: 'unavailable' };
     return new Promise((resolve, reject) => {
       const key = randomUUID();
-      const timer = setTimeout(() => { pending.delete(key); reject(Error('Chat capture is unavailable. Refresh the page and try again.')); }, 5500);
+      const timer = setTimeout(() => { pending.delete(key); reject(Error('Source capture is unavailable. Refresh the page and try again.')); }, message.action === 'open_editor' ? 15000 : 5500);
       pending.set(key, { contents, resolve, timer });
       try { contents.send('desktop:site-request', key, message); }
       catch (error) { clearTimeout(timer); pending.delete(key); reject(error); }

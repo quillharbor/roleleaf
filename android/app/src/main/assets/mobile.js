@@ -3,15 +3,17 @@
 const $ = id => document.getElementById(id), pending = new Map();
 let serial = 0, platform = 'tipsy', route = null, job = null, output = null;
 let phase = 'empty', saved = false, saving = false;
+let creator = false, profileLink = null;
 let opening = false, listedBots = [], pickerRevision = 0;
 const selectedBots = new Set();
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 function renderBots() {
+  $('chat-mode').disabled = $('creator-mode').disabled = Boolean(job || saving || opening);
   $('load-list').disabled = Boolean(job || saving || opening);
   $('bot-search').disabled = Boolean(job || saving || opening);
   const query = $('bot-search').value.trim().toLocaleLowerCase();
   const matches = matchingBots();
-  $('list-count').textContent = opening ? 'Loading chats…' : `${listedBots.length} characters loaded${query ? ` · ${matches.length} matches` : ''}`;
+  $('list-count').textContent = opening ? (creator ? 'Loading your characters…' : 'Loading chats…') : `${listedBots.length} characters loaded${query ? ` · ${matches.length} matches` : ''}`;
   $('bot-list').replaceChildren();
   for (const bot of matches) {
     const row = document.createElement('label'); row.className = 'bot-row'; row.dataset.botId = bot.id;
@@ -30,7 +32,7 @@ function renderBots() {
     row.append(checkbox, avatar, name); $('bot-list').append(row);
   }
   $('list-empty').hidden = opening || matches.length > 0;
-  $('list-empty').textContent = query ? 'No matching characters.' : 'Sign in on the source site, then refresh the list.';
+  $('list-empty').textContent = query ? 'No matching characters.' : creator ? 'No saved characters found.' : 'Sign in on the source site, then refresh the list.';
   renderSelection();
 }
 function matchingBots() {
@@ -53,6 +55,87 @@ function renderSelection() {
   });
   renderActions();
 }
+// C.AI's mobile home does not mount the Recent sidebar. Read a fresh,
+// attached background page at desktop width without navigating the user's page.
+async function loadCaiBots(request, ownCharacters) {
+  let profile;
+  if (ownCharacters) profile = await liveTabs.sendMessage(1, { type: 'BOT_ANDROID_LIST', scope: 'profile' }).catch(() => null);
+  await call('openCaiList', { scope: ownCharacters ? 'creator' : 'recent', url: profile?.url });
+  if (ownCharacters && !profile?.url) {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      if (request !== pickerRevision) return;
+      profile = await workerTabs.sendMessage(1, { type: 'BOT_ANDROID_LIST', scope: 'profile' }).catch(() => null);
+      if (profile?.url) break;
+      await pause(500);
+    }
+    if (!profile?.url) throw Error('Sign in to Character.AI to load your characters.');
+    await call('openCaiList', { scope: 'creator', url: profile.url });
+  }
+  let previous = '', stable = 0, found = false;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if (request !== pickerRevision) return;
+    await workerTabs.sendMessage(1, { type: 'BOT_ANDROID_LIST', scope: ownCharacters ? 'creator' : 'recent' });
+    const response = await workerTabs.sendMessage(1, ownCharacters
+      ? { type: 'BOT_CREATOR', action: 'list' } : { type: 'BOT_SIDEBAR' }).catch(() => null);
+    if (request !== pickerRevision) return;
+    if (response?.platform === 'character_ai' && (ownCharacters ? response.ok : response.found)) {
+      found = true;
+      listedBots = (response.bots || []).filter(bot => typeof bot.name === 'string' &&
+        (ownCharacters ? BotCreator.target('character_ai', bot.id, bot.url) : BotModel.route(bot.url)?.platform === 'character_ai'));
+      const signature = JSON.stringify(listedBots.map(bot => [bot.id, bot.name, bot.avatar]));
+      stable = signature === previous ? stable + 1 : 0; previous = signature;
+      renderBots();
+      if (stable >= 4 && (listedBots.length || attempt >= 12)) break;
+    }
+    if (attempt < 39) await pause(500);
+  }
+  if (!found) throw Error('Could not load this list. Check your connection and sign in to Character.AI.');
+  for (const id of selectedBots) if (!listedBots.some(bot => bot.id === id)) selectedBots.delete(id);
+  if (!listedBots.length) listNotice(ownCharacters ? 'No saved characters found.' : 'No recent chats found.');
+}
+async function loadTipsyCreatorBots(request) {
+  const ownProfile = async tabs => {
+    const response = await tabs.sendMessage(1, { type: 'BOT_CREATOR', action: 'profile' }).catch(() => null);
+    const profile = BotCreator.profile(response?.url);
+    return profile?.platform === 'tipsy' ? profile : null;
+  };
+  let profile = await ownProfile(liveTabs);
+  if (!profile) {
+    // A chat may still be hydrating its account navigation. A fresh mobile
+    // Recent page exposes the signed-in account link without moving the source.
+    await call('openRecent');
+    for (let attempt = 0; attempt < 30; attempt++) {
+      if (request !== pickerRevision) return;
+      profile = await ownProfile(workerTabs);
+      if (profile) break;
+      await pause(500);
+    }
+  }
+  if (request !== pickerRevision) return;
+  if (!profile) throw Error('Sign in to Tipsy to load your characters.');
+  await call('openCreatorWorker', { url: profile.url });
+  let previous = '', stable = 0, response, found = false;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if (request !== pickerRevision) return;
+    response = await workerTabs.sendMessage(1, { type: 'BOT_CREATOR', action: 'list' }).catch(() => null);
+    if (request !== pickerRevision) return;
+    if (response?.ok && response.platform === 'tipsy') {
+      found = true;
+      listedBots = (response.bots || []).filter(bot => typeof bot.name === 'string' &&
+        BotCreator.target('tipsy', bot.id, bot.url)?.url === profile.url);
+      const signature = JSON.stringify(listedBots.map(bot => [bot.id, bot.name, bot.avatar]));
+      stable = signature === previous ? stable + 1 : 0; previous = signature;
+      renderBots();
+      if (!response.more && stable >= 4 && (listedBots.length || attempt >= 12)) break;
+      if (response.more) await workerTabs.sendMessage(1, { type: 'BOT_ANDROID_LIST', scope: 'more' });
+    }
+    if (attempt < 39) await pause(500);
+  }
+  if (!found) throw Error('Could not load your characters. Check your connection and sign in to Tipsy.');
+  for (const id of selectedBots) if (!listedBots.some(bot => bot.id === id)) selectedBots.delete(id);
+  if (response?.more) listNotice('Some characters could not finish loading. The loaded characters are available to export.');
+  else if (!listedBots.length) listNotice('No saved characters found.');
+}
 async function loadBots() {
   if (job || saving || opening) return;
   const request = ++pickerRevision;
@@ -61,8 +144,18 @@ async function loadBots() {
     const current = await call('current');
     if (request !== pickerRevision) return;
     platform = current.platform;
-    route = BotModel.route(current.url);
+    route = creator ? null : BotModel.route(current.url);
     $('picker-platform').textContent = platform === 'tipsy' ? 'Tipsy' : 'Character.AI';
+    if (platform === 'character_ai') {
+      profileLink = null; $('open-profile').hidden = true;
+      await loadCaiBots(request, creator);
+      return;
+    }
+    if (creator) {
+      profileLink = null; $('open-profile').hidden = true;
+      await loadTipsyCreatorBots(request);
+      return;
+    }
     const onRecent = platform === 'tipsy' && new URL(current.url).pathname.replace(/\/$/, '') === '/chat/recent';
     let sidebar = await liveTabs.sendMessage(1, { type: 'BOT_SIDEBAR' }).catch(() => null);
     if (request !== pickerRevision) return;
@@ -123,7 +216,7 @@ const liveTabs = tabsFor(false), workerTabs = tabsFor(true);
 function renderActions() {
   const working = Boolean(job), hasOutput = Boolean(output);
   $('cancel-picker').disabled = working || saving;
-  $('export').hidden = !route;
+  $('export').hidden = creator || !route;
   $('export').disabled = working || saving || opening || !route;
   $('export-selected').disabled = working || saving || opening || !selectedBots.size;
   $('export-selected').textContent = `Export (${selectedBots.size})`;
@@ -147,11 +240,32 @@ function setPhase(value) {
   $('status-title').textContent = labels[value];
   renderActions();
 }
+function updateScope() {
+  $('chat-mode').setAttribute('aria-pressed', String(!creator));
+  $('creator-mode').setAttribute('aria-pressed', String(creator));
+  $('picker-title').textContent = creator ? 'My Characters' : 'Choose characters';
+  $('message-stat').hidden = creator;
+  $('open-profile').hidden = true;
+  profileLink = null;
+}
+function setScope(value) {
+  if (job || saving || opening || creator === value) return;
+  creator = value; selectedBots.clear(); listedBots = []; route = null;
+  $('bot-search').value = '';
+  updateScope(); void loadBots();
+}
+$('chat-mode').onclick = () => setScope(false);
+$('creator-mode').onclick = () => setScope(true);
+$('open-profile').onclick = async () => {
+  if (job || saving || opening || profileLink?.platform !== platform) return;
+  try { await call('openCreatorProfile', { url: profileLink.url }); }
+  catch (error) { listNotice(error.message); }
+};
 window.openBatchPicker = () => {
   if (job || saving || opening) return;
   selectedBots.clear(); listedBots = []; route = null; output = null; saved = false;
   $('bot-search').value = '';
-  void loadBots();
+  updateScope(); void loadBots();
 };
 async function closeBatchPicker() {
   if (job || saving) return;
@@ -245,16 +359,23 @@ async function collectSelected() {
   try {
     await call('busy', { value: true });
     const batch = await MobileBatch.run({ bots, signal: job.signal,
+      successStatus: creator ? 'creator_settings_saved' : 'complete_current_conversation',
       progress: (index, total, bot) => {
         $('export-character').textContent = bot.name;
         $('export-character').hidden = false;
         status(`Exporting character ${index + 1} of ${total}…`);
       },
       collect: async bot => {
-        const target = BotModel.route(bot.url);
+        const target = creator ? BotCreator.target(platform, bot.id, bot.url) : BotModel.route(bot.url);
         if (!target || target.platform !== platform) throw Error('Character belongs to a different source. Refresh the list.');
-        return collectFreshChat(target, bot.url, name => { $('export-character').textContent = name; },
-          text => status(`${bots.indexOf(bot) + 1} / ${bots.length} · ${text}`));
+        const progress = text => status(`${bots.indexOf(bot) + 1} / ${bots.length} · ${text}`);
+        if (creator) {
+          job.signal.throwIfAborted();
+          await call('openCreatorWorker', { url: target.url });
+          await openCreatorEditor(workerTabs, 1, target, job.signal);
+          return collectCreator({ tabs: workerTabs, tabId: 1, route: target, signal: job.signal, progress, downloadImage: imageDownload });
+        }
+        return collectFreshChat(target, bot.url, name => { $('export-character').textContent = name; }, progress);
       } });
     if (!batch.files.length) throw Error(batch.stopped ? 'Export stopped before any character packages were ready.' : batch.results[0]?.error || 'No character packages were created. Try again.');
     const count = batch.files.length;
@@ -265,7 +386,13 @@ async function collectSelected() {
     $('export-character').hidden = true;
     $('result-label').textContent = `${count} of ${bots.length} character packages ready`;
     $('result').dataset.partial = String(batch.partial);
-    status(`Exported ${count} of ${bots.length} characters. Each character saves as a separate ZIP.`);
+    const issues = batch.results.filter(item => !['complete_current_conversation','creator_settings_saved'].includes(item.status));
+    const explain = issues.slice(0, 5).map(item => {
+      const name = bots.find(bot => bot.id === item.id)?.name || item.id;
+      return `${name}: ${item.error || (item.status === 'partial' ? 'Partial; see the ZIP report.' : 'Skipped.')}`;
+    });
+    status([`Exported ${count} of ${bots.length} characters. Each character saves as a separate ZIP.`,
+      ...explain, ...(issues.length > explain.length ? [`And ${issues.length - explain.length} more.`] : [])].join('\n'));
     setPhase('done');
   } catch (error) { status(error.message); setPhase('error'); }
   finally { await call('closeWorker').catch(() => {}); await call('busy', { value: false }).catch(() => {}); job = null; renderActions(); }

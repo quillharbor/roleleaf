@@ -159,7 +159,8 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
   const command = action => readChat(tabId, route, action, worker);
   let ownsCapture = false;
   try {
-    let model = await waitForCharacter({ tabId, route, worker, expectedConversationId, signal, progress });
+    const character = await waitForCharacter({ tabId, route, worker, expectedConversationId, signal, progress });
+    const model = { id: character.id, platform: character.platform, name: character.name, assets: [] };
     onCharacter(model.name);
     const before = (await command('status')).status;
     if (before.running) throw Error('This chat is already being exported. Wait for it to finish.');
@@ -199,9 +200,6 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
       requested: 'all_bot_conversations', actual: 'current_conversation',
       conversation_list_complete: false, archived_checked: false,
     };
-    const latest = await readCharacter(tabId, route, worker);
-    if (latest) model = BotModel.normalize(route, latest);
-
     addChatImages(model, conversations);
     const media = await collectImages(model, signal, progress, warnings, downloadImage);
     const final = readConversations(route, await command('export'));
@@ -214,7 +212,7 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
     const output = await BotPackage.build({
       model, conversations, scope, ...media, started, stopped: stopped || signal.aborted, warnings,
     });
-    const filename = `${route.platform}_${BotModel.safe(model.name)}_${route.id}_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+    const filename = `${route.platform}_${BotModel.safe(model.name)}_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
     return {
       bytes: output.bytes,
       filename,
@@ -222,11 +220,9 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
       conversations: conversations.length,
       images: media.assets.filter(asset => asset.status === 'saved').length,
       imageCount: media.assets.length,
-      partial: output.report.character.status === 'partial' ||
-        output.report.chats.status !== 'captured_mainlines_complete' ||
+      partial: output.report.chats.status !== 'captured_mainlines_complete' ||
         output.report.images.status === 'partial' || output.report.stopped ||
         model.assets.length > media.assets.length,
-      missingCharacterFields: output.report.character.status === 'partial',
     };
   } finally {
     if (ownsCapture) await command('cancel').catch(() => {});
@@ -269,4 +265,46 @@ async function saveBot(output, { folder, saveAs }) {
     chrome.downloads.onChanged.removeListener(changed);
     URL.revokeObjectURL(url);
   }
+}
+
+async function collectCreator({ tabId, route, tabs = chrome.tabs, signal, progress,
+  downloadImage = BotPackage.downloadImage }) {
+  const started = new Date().toISOString();
+  const warnings = [];
+  const deadline = Date.now() + 20000;
+  let model;
+  progress('Reading saved character settings…');
+  while (Date.now() < deadline) {
+    signal.throwIfAborted();
+    const result = await tabs.sendMessage(tabId, { type: 'BOT_CREATOR', action: 'read', characterId: route.id }).catch(() => null);
+    signal.throwIfAborted();
+    if (result?.ok) {
+      model = BotCreator.model(route, result.data);
+      break;
+    }
+    if (result?.reason === 'forbidden') throw Error('This character is not editable by the signed-in account.');
+    await collectionDelay(450);
+  }
+  if (!model) throw Error('Could not read the saved editor. Open the character from your own profile and try again.');
+  const media = await collectImages(model, signal, progress, warnings, downloadImage);
+  signal.throwIfAborted();
+  progress('Creating the creator ZIP…');
+  const scope = { requested: 'creator_character', actual: 'creator_character' };
+  const output = await BotPackage.build({ model, conversations: [], scope, ...media, started, warnings });
+  signal.throwIfAborted();
+  return {
+    bytes: output.bytes,
+    filename: `${route.platform}_creator_${BotModel.safe(model.name)}_${route.id}_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`,
+    messages: 0, conversations: 0, images: media.assets.filter(asset => asset.status === 'saved').length,
+    imageCount: media.assets.length, partial: output.report.character.status === 'partial' ||
+      output.report.images.status === 'partial' || model.assets.length > media.assets.length,
+  };
+}
+
+async function openCreatorEditor(tabs, tabId, route, signal) {
+  if (route.platform !== 'tipsy') return;
+  signal.throwIfAborted();
+  const result = await tabs.sendMessage(tabId, { type: 'BOT_CREATOR', action: 'open_editor', characterId: route.id });
+  signal.throwIfAborted();
+  if (!result?.ok) throw Error('Could not open this character’s Edit menu on your Tipsy profile. Refresh the list and try again.');
 }

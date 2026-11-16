@@ -4,17 +4,17 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = name => fs.readFileSync(`android/app/src/main/assets/${name}.js`, 'utf8');
 const bots = [1, 2, 3].map(n => ({ id: `10000000${n}`, name: `Synthetic ${n}`, url: `https://tipsy.chat/chat/10000000${n}`, avatar: n === 1 ? 'https://img.tipsy.chat/avatar.png' : null }));
-function fixture({ hydrate = false, changeConversation = false } = {}) {
+function fixture({ hydrate = false, changeConversation = false, cai = false, coldProfile = false, foreignProfile = false } = {}) {
   const nodes = new Map(), opened = [], written = [], calls = [];
-  let staged;
+  let staged, creatorReads = 0, creatorGeneration = 0;
   const element = () => ({ value: '', textContent: '', children: [], dataset: {}, hidden: false,
     get firstElementChild() { return this.children[0]; },
     showModal() { this.open = true; }, close() { this.open = false; },
     setAttribute(key, value) { this[key] = value; },
     append(...items) { this.children.push(...items); }, replaceChildren(...items) { this.children = items; } });
   const node = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id); };
-  const current = 'https://tipsy.chat/chat/100000002?conversation_id=current&language_code=en';
-  let worker, listReads = 0, dismissed = 0, statusReads = 0;
+  const current = cai ? 'https://character.ai/' : 'https://tipsy.chat/chat/100000002?conversation_id=current&language_code=en';
+  let worker, listReads = 0, dismissed = 0, statusReads = 0, generation = 0, ownTab = false;
   const accountBots = hydrate ? Array.from({ length: 30 }, (_, i) => ({ id: String(100000001 + i), name: `Synthetic ${i + 1}`, url: `https://tipsy.chat/chat/${100000001 + i}` })) : bots;
   const env = vm.createContext({ URL, TextEncoder, btoa, Uint8Array, AbortController, setTimeout: (fn, ms) => setTimeout(fn, Math.min(ms, 5)), clearTimeout,
     document: { getElementById: node, createElement: element, body: element() },
@@ -24,7 +24,7 @@ function fixture({ hydrate = false, changeConversation = false } = {}) {
       calls.push(method);
       if (method === 'zipBegin') staged = params.filename;
       if (method === 'zipSaveToFolder') written.push(staged);
-      if (method === 'current') data = { platform: 'tipsy', url: params.worker ? worker : current, title: 'Tipsy' };
+      if (method === 'current') data = { platform: cai ? 'character_ai' : 'tipsy', url: params.worker ? worker : current, title: 'Tipsy' };
       if (method === 'capture') {
         if (params.message.type === 'TIPSY_CHAT') {
           data = { ok: true, status: { character_id: '100000002', conversation_id: changeConversation && ++statusReads > 1 ? 'changed' : 'current' } };
@@ -33,6 +33,29 @@ function fixture({ hydrate = false, changeConversation = false } = {}) {
         data = { found: onRecent, bots: onRecent ? accountBots.slice(0, hydrate && ++listReads <= 3 ? 17 : accountBots.length) : [] };
         }
       }
+      if (!cai && method === 'capture' && params.message.type === 'BOT_CREATOR') {
+        const profile = 'https://tipsy.chat/zh-tw/profile/100000099';
+        if (params.message.action === 'profile') data = { ok: true, url: coldProfile && !params.worker ? null : profile };
+        if (params.message.action === 'list') {
+          const found = params.worker && worker === profile;
+          data = { ok: !!found, platform: 'tipsy', more: found && ++creatorReads < 3, bots: found ? bots.slice(0, creatorReads < 3 ? 1 : 3).map(bot => ({...bot,
+            name: 'Own ' + creatorGeneration + ' ' + bot.name, url: foreignProfile ? 'https://tipsy.chat/profile/100000088' : profile })) : [] };
+        }
+      }
+      if (method === 'openCreatorWorker') { worker = params.url; creatorReads = 0; creatorGeneration++; }
+      if (cai && method === 'capture') {
+        const own = worker?.endsWith('/profile');
+        if (params.message.type === 'BOT_ANDROID_LIST') ownTab = own;
+        const found = params.worker && worker && (!own || ownTab);
+        // Mobile home has no sidebar. The background page hydrates incrementally.
+        const count = ++listReads < 3 ? 1 : 2;
+        data = { ok: !!found, found: !!found, platform: 'character_ai', bots: found ? [1, 2].slice(0, count).map(n => ({
+          id: `Cai_Bot${n}`, name: `${own ? 'Own' : 'Recent'} ${generation}-${n}`,
+          url: `https://character.ai/${own ? 'character' : 'chat'}/Cai_Bot${n}${own ? '/edit' : ''}`,
+        })) : [], reason: 'profile' };
+      }
+      if (cai && method === 'capture' && params.message.scope === 'profile') data = { ok: true, url: 'https://character.ai/profile/synthetic' };
+      if (method === 'openCaiList') { generation++; listReads = 0; ownTab = false; worker = 'https://character.ai/' + (params.scope === 'creator' ? 'profile' : ''); }
       if (method === 'openRecent') worker = 'https://tipsy.chat/chat/recent';
       if (method === 'openChatPage') { opened.push(params.url); worker = params.url; }
       if (method === 'closeWorker') worker = null;
@@ -43,7 +66,7 @@ function fixture({ hydrate = false, changeConversation = false } = {}) {
     collectBot: async ({ route, onCharacter }) => { onCharacter('Synthetic fixture'); return { bytes: new Uint8Array(10), messages: 2, images: 1, partial: false, filename: `${route.id}.zip` }; },
   });
   vm.runInContext(fs.readFileSync('tipsy-exporter/collect-bot.js', 'utf8').split('async function readCharacter')[0], env);
-  for (const file of ['core', 'bot-model']) vm.runInContext(fs.readFileSync(`tipsy-exporter/${file}.js`, 'utf8'), env);
+  for (const file of ['core', 'bot-model', 'bot-creator']) vm.runInContext(fs.readFileSync(`tipsy-exporter/${file}.js`, 'utf8'), env);
   vm.runInContext(source('mobile-batch'), env); vm.runInContext(source('mobile'), env);
   return { env, node, opened, written, calls, dismissed: () => dismissed };
 }
@@ -110,4 +133,69 @@ test('Android batch retains finished ZIPs on failure, cancellation and size cap'
     assert.equal(result.results.length, 3);
     if (mode !== 'failure') assert.equal(result.results[2].status, 'skipped');
   }
+});
+
+test('C.AI mobile home automatically loads fresh Recent and My Characters without source navigation', async () => {
+  const f = fixture({ cai: true }); await ready(f);
+  assert.equal(f.node('bot-list').children.length, 2);
+  assert.match(vm.runInContext('listedBots[0].name', f.env), /^Recent 1-/);
+  assert.equal(f.node('open-profile').hidden, true);
+  assert.ok(f.calls.includes('openCaiList'));
+  assert.ok(!f.calls.includes('openRecent'));
+  f.node('creator-mode').onclick();
+  for (let i = 0; i < 100 && vm.runInContext('opening', f.env); i++) await new Promise(r => setTimeout(r, 5));
+  assert.match(vm.runInContext('listedBots[0].name', f.env), /^Own 2-/);
+  assert.equal(f.node('bot-list').children.length, 2);
+  assert.equal(f.node('open-profile').hidden, true);
+  f.node('chat-mode').onclick();
+  for (let i = 0; i < 100 && vm.runInContext('opening', f.env); i++) await new Promise(r => setTimeout(r, 5));
+  assert.match(vm.runInContext('listedBots[0].name', f.env), /^Recent 3-/);
+  await vm.runInContext('closeBatchPicker()', f.env); await ready(f);
+  assert.match(vm.runInContext('listedBots[0].name', f.env), /^Recent 4-/);
+  assert.equal(await vm.runInContext('liveTabs.get().then(tab=>tab.url)', f.env), 'https://character.ai/');
+  assert.equal(f.calls.filter(x=>x==='openCreatorProfile').length, 0);
+});
+
+test('Android C.AI resolves the signed-in profile and only selects Characters on the own profile', () => {
+  let handler, clicked = 0, username = 'synthetic_owner';
+  let keys = ['characters', 'liked', 'personas'];
+  const env = {
+    chrome: { runtime: { id: 'android', onMessage: { addListener: fn => { handler = fn; } } } },
+    BotCreator: { profile: () => true }, location: { href: 'https://character.ai/profile/synthetic_owner' },
+    document: {
+      getElementById: () => ({ textContent: JSON.stringify({ props: { pageProps: { user: { user: { username } } } } }) }),
+      querySelectorAll: () => keys.map(key => ({
+        getAttribute: name => name === 'aria-controls' ? 'content-' + key : 'false',
+        click: () => { clicked++; },
+      })),
+    },
+  };
+  vm.runInNewContext(source('cai-list'), env);
+  let result;
+  const request = scope => handler({ type: 'BOT_ANDROID_LIST', scope }, { id: 'android' }, value => { result = value; });
+  request('profile'); assert.equal(result.url, 'https://character.ai/profile/synthetic_owner');
+  request('creator'); assert.equal(clicked, 1);
+  keys = ['characters']; request('creator'); assert.equal(clicked, 1, 'Do not operate another user’s profile');
+  for (username of [undefined, '../another', '']) { request('profile'); assert.equal(result.url, null); }
+});
+
+for (const coldProfile of [false, true]) test(`Tipsy My Characters loads in background from a chat (cold profile: ${coldProfile})`, async () => {
+  const f = fixture({ coldProfile });
+  vm.runInContext('creator = true', f.env); await ready(f);
+  assert.equal(f.node('bot-list').children.length, 3);
+  assert.equal(f.node('open-profile').hidden, true);
+  assert.equal(f.node('list-notice').textContent, '');
+  assert.ok(f.calls.includes('openCreatorWorker'));
+  assert.equal(f.calls.includes('openRecent'), coldProfile);
+  assert.ok(!f.calls.includes('openCreatorProfile'));
+  assert.match(vm.runInContext('listedBots[0].name', f.env), /^Own 1 /);
+  await vm.runInContext('loadBots()', f.env);
+  assert.match(vm.runInContext('listedBots[0].name', f.env), /^Own 2 /);
+  assert.equal(await vm.runInContext('liveTabs.get().then(t=>t.url)', f.env), 'https://tipsy.chat/chat/100000002?conversation_id=current&language_code=en');
+});
+test('Tipsy creator list rejects characters attributed to a different profile', async () => {
+  const f = fixture({ foreignProfile: true });
+  vm.runInContext('creator = true', f.env); await ready(f);
+  assert.equal(f.node('bot-list').children.length, 0);
+  assert.equal(f.node('list-notice').textContent, 'No saved characters found.');
 });

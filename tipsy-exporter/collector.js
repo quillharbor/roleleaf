@@ -86,7 +86,7 @@ async function runSingle() {
       progress: showProgress, onCharacter: name => { $('name').textContent = name; },
     });
     $('summary').textContent =
-      `Character: ${output.missingCharacterFields ? 'Some fields missing' : 'Source fields collected'}\n${counts(output)} · Chats: ${output.conversations}\nSee the export report for coverage and missing content.`;
+      `${counts(output)} · Chats: ${output.conversations}\nSee the export report for coverage and missing content.`;
     $('stop').disabled = true;
     showProgress('Export ready. Choose where to save it.');
     await saveBot(output, { saveAs: true });
@@ -109,7 +109,7 @@ async function loadBatch() {
   }
   const ids = new Set();
   const bots = stored.bots.map(({ id, url, name }) => {
-    const route = BotModel.route(url);
+    const route = stored.creator ? BotCreator.target(stored.platform, id, url) : BotModel.route(url);
     if (route?.platform !== stored.platform || route?.id !== id || ids.has(id) || typeof name !== 'string') {
       throw Error('The queue contains an invalid character. Refresh the sidebar and select again.');
     }
@@ -119,7 +119,7 @@ async function loadBatch() {
   await chrome.storage.session.remove(key);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   return {
-    bots, currentId: stored.currentId,
+    bots, currentId: stored.currentId, creator: stored.creator === true,
     folder: `RoleLeaf/${stored.platform}_${timestamp}_${batchId.slice(0, 8)}`,
   };
 }
@@ -149,19 +149,35 @@ async function closeWorker() {
 
 async function runBot(bot) {
   bot.status = 'running';
-  bot.detail = 'Opening chat…';
+  bot.detail = job.creator ? 'Opening character editor…' : 'Opening chat…';
   renderBatch();
   try {
-    const output = await collectSelectedBot({
-      route: bot.route, url: bot.url, current: bot.id === job.currentId,
-      progress: detail => { bot.detail = detail; renderBatch(); },
-      onCharacter: name => { bot.name = name; },
-    });
+    const progress = detail => { bot.detail = detail; renderBatch(); };
+    let output;
+    if (job.creator) {
+      workerTab = (await chrome.tabs.create({ url: bot.route.url, active: false })).id;
+      if (bot.route.platform === 'tipsy') {
+        const deadline = Date.now() + 15000;
+        while (Date.now() < deadline) {
+          controller.signal.throwIfAborted();
+          const state = await chrome.tabs.get(workerTab);
+          if (state.status === 'complete') break;
+          await collectionDelay(350);
+        }
+      }
+      await openCreatorEditor(chrome.tabs, workerTab, bot.route, controller.signal);
+      output = await collectCreator({ tabId: workerTab, route: bot.route, signal: controller.signal, progress });
+    } else {
+      output = await collectSelectedBot({
+        route: bot.route, url: bot.url, current: bot.id === job.currentId, progress,
+        onCharacter: name => { bot.name = name; },
+      });
+    }
     bot.detail = 'Saving ZIP…';
     renderBatch();
     await saveBot(output, { folder: job.folder, saveAs: false });
     bot.status = output.partial ? 'partial' : 'saved';
-    bot.detail = counts(output);
+    bot.detail = job.creator ? `Images: ${output.images} of ${output.imageCount} · Creator settings` : counts(output);
   } catch (error) {
     bot.status = controller.signal.aborted && error === controller.signal.reason ? 'skipped' : 'failed';
     bot.detail = bot.status === 'skipped' ? 'Export stopped.' : error.message || 'Export failed.';
@@ -213,6 +229,7 @@ if (batchId) {
   $('retry').onclick = runBatch;
   loadBatch().then(loaded => {
     job = loaded;
+    if (job.creator) $('name').textContent = 'My Characters export';
     $('destination').textContent = `Chrome downloads / ${job.folder}`;
     return runBatch();
   }).catch(error => showProgress(error.message, true));

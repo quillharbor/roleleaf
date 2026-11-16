@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   // Keep completed packages within a bounded memory budget.
-  async function run({ bots, signal, collect, progress, limit = 120 * 1024 * 1024 }) {
+  async function run({ bots, signal, collect, progress, successStatus = 'complete_current_conversation', limit = 120 * 1024 * 1024 }) {
     const files = [], results = []; let bytes = 0, messages = 0, images = 0;
     for (const [index, bot] of bots.entries()) {
       if (signal.aborted) break;
@@ -14,7 +14,7 @@
         }
         files.push({ filename: output.filename, bytes: output.bytes });
         bytes += output.bytes.length; messages += output.messages; images += output.images;
-        results.push({ id: bot.id, status: output.partial ? 'partial' : 'complete_current_conversation' });
+        results.push({ id: bot.id, status: output.partial ? 'partial' : successStatus });
       } catch (error) {
         results.push({ id: bot.id, name: bot.name, status: signal.aborted ? 'cancelled' : 'failed', error: error.message });
       }
@@ -22,7 +22,7 @@
     const done = new Set(results.map(r => r.id));
     for (const bot of bots) if (!done.has(bot.id)) results.push({ id: bot.id, name: bot.name, status: 'skipped' });
     return { files, results, bytes, messages, images, stopped: signal.aborted,
-      partial: signal.aborted || results.some(r => r.status !== 'complete_current_conversation') };
+      partial: signal.aborted || results.some(r => r.status !== successStatus) };
   }
   root.MobileBatch = { run };
 })(globalThis);

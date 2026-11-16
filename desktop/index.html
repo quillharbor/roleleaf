@@ -35,10 +35,12 @@
     <aside class="panel" aria-labelledby="panel-title">
       <p class="eyebrow">BOT EXPORTER DESKTOP</p>
       <h2 id="panel-title">Export characters</h2>
-      <p class="hint">Each character gets a ZIP with its card, images, and current chat.</p>
+      <div class="selection export-scope"><button type="button" id="chat-mode" aria-pressed="true">Recent chats</button><button type="button" id="creator-mode" aria-pressed="false">My Characters</button></div>
+      <p class="hint" id="scope-note">Each ZIP includes the character name, current chat, and chat images.</p>
       <label class="search"><span class="sr-only">Search characters</span><input id="search" type="search" placeholder="Search characters"></label>
       <div class="selection"><label><input id="select-all" type="checkbox"> Select all</label><span id="selected-count"></span></div>
       <ul id="bots" class="bot-list" aria-label="Chat list"></ul>
+      <button type="button" id="open-profile" class="text-button" hidden>Open my profile</button>
       <button type="button" id="refresh-bots" class="text-button">Refresh chat list</button>
       <div class="actions"><button type="button" id="export" class="primary">Export</button><button type="button" id="stop" hidden>Stop queue</button></div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
@@ -51,6 +53,7 @@
   <script src="../tipsy-exporter/chat.js"></script>
   <script src="../tipsy-exporter/png.js"></script>
   <script src="../tipsy-exporter/bot-model.js"></script>
+  <script src="../tipsy-exporter/bot-creator.js"></script>
   <script src="../tipsy-exporter/bot-package.js"></script>
   <script src="../tipsy-exporter/collect-bot.js"></script>
   <script src="demo.js"></script>

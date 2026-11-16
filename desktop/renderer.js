@@ -6,6 +6,7 @@ const platformButtons = [...document.querySelectorAll('[data-platform]')];
 const selected = new Set();
 const authFallbacks = new Map();
 let platform;
+let creator = false, profileLink = null;
 let current;
 let controller;
 let demo = new URLSearchParams(location.search).has('demo');
@@ -85,6 +86,7 @@ function renderBots() {
     button.append(icon, name);
     button.onclick = () => {
       if (demo) { showBot(bot); renderBots(); }
+      else if (creator) { check.checked = !check.checked; check.onchange(); }
       else void navigate('open', bot.url);
     };
     row.append(check, button);
@@ -115,6 +117,10 @@ async function switchPlatform(value) {
   $('mode').textContent = demo ? 'Back to source site' : 'View demo';
   $('mode').setAttribute('aria-pressed', String(demo));
   $('refresh-bots').hidden = demo;
+  $('chat-mode').hidden = $('creator-mode').hidden = demo;
+  profileLink = null;
+  $('open-profile').hidden = true;
+  updateScope();
   $('address').value = sites[value].origin;
   if (demo) {
     const bot = sites[value].bots[0];
@@ -134,6 +140,7 @@ function setBusy(busy) {
   for (const button of platformButtons) button.disabled = busy;
   $('mode').disabled = busy;
   $('refresh-bots').disabled = busy;
+  $('chat-mode').disabled = $('creator-mode').disabled = $('open-profile').disabled = busy;
   $('back').disabled = busy;
   $('reload').disabled = busy;
   $('address').disabled = busy;
@@ -153,6 +160,23 @@ async function refreshBots() {
   const request = ++revision;
   try {
     const tab = await desktop.siteCurrent();
+    if (creator) {
+      const result = tab && await desktop.siteRequest(tab.id, { type: 'BOT_CREATOR', action: 'list' });
+      const profile = tab && await desktop.siteRequest(tab.id, { type: 'BOT_CREATOR', action: 'profile' });
+      if (request !== revision || controller || demo || !creator) return;
+      profileLink = BotCreator.profile(profile?.url);
+      $('open-profile').hidden = profileLink?.platform !== platform;
+      current = null;
+      liveBots = result?.ok && result.platform === platform ? result.bots.flatMap(bot => {
+        const route = BotCreator.target(platform, bot.id, bot.url);
+        return route && typeof bot.name === 'string' ? [{ ...bot, route, letter: Array.from(bot.name)[0] || 'B', color: 'violet' }] : [];
+      }) : [];
+      for (const id of selected) if (!liveBots.some(bot => bot.id === id)) selected.delete(id);
+      $('status').textContent = result?.ok ? result.more ? 'Scroll down on the source profile and refresh to load more.' :
+        liveBots.length ? '' : 'No saved characters on this profile.' : 'Open your own profile on the source site and select Characters.';
+      renderBots();
+      return;
+    }
     const route = BotModel.route(tab?.url);
     const result = tab && await desktop.siteRequest(tab.id, { type: 'BOT_SIDEBAR' });
     if (request !== revision || controller || demo) return;
@@ -192,6 +216,15 @@ async function downloadImage(url, signal) {
 }
 
 async function collectLive(bot, signal, progress) {
+  if (creator) {
+    signal.throwIfAborted();
+    const id = await desktop.siteWorker(bot.route.url);
+    try {
+      // A worker can still be loading when its ID first becomes available.
+      await openCreatorEditor(liveTabs, id, bot.route, signal);
+      return await collectCreator({ tabs: liveTabs, tabId: id, route: bot.route, signal, progress, downloadImage });
+    } finally { await desktop.siteClose(id); }
+  }
   globalThis.chrome.tabs = liveTabs;
   const source = await desktop.siteCurrent();
   const route = BotModel.route(source?.url);
@@ -249,7 +282,7 @@ async function exportSelected() {
         await desktop.saveZip(filename, output.bytes);
         saved++;
         row.dataset.state = 'saved';
-        row.textContent = `${bot.name} · Saved · ${output.messages} messages · ${output.images} images${output.partial ? ' · Partial' : ''}`;
+        row.textContent = `${bot.name} · Saved · ${creator ? 'Creator settings' : output.messages + ' messages'} · ${output.images} images${output.partial ? ' · Partial' : ''}`;
       } catch (error) {
         failed++;
         row.dataset.state = 'error';
@@ -267,7 +300,24 @@ async function exportSelected() {
 }
 
 for (const button of platformButtons) button.onclick = () => { void switchPlatform(button.dataset.platform); };
-$('mode').onclick = () => { demo = !demo; void switchPlatform(platform); };
+function updateScope() {
+  $('chat-mode').setAttribute('aria-pressed', String(!creator));
+  $('creator-mode').setAttribute('aria-pressed', String(creator));
+  $('refresh-bots').textContent = creator ? 'Refresh character list' : 'Refresh chat list';
+  $('scope-note').textContent = creator ? 'Back up saved settings from your own profile. Each character gets a ZIP without chats.' :
+    'Each ZIP includes the character name, current chat, and chat images.';
+}
+function setScope(value) {
+  if (controller || demo || value === creator) return;
+  creator = value; selected.clear(); liveBots = []; current = null;
+  profileLink = null; $('open-profile').hidden = true;
+  $('search').value = ''; $('status').textContent = ''; $('queue').replaceChildren();
+  updateScope(); renderBots(); void refreshBots();
+}
+$('chat-mode').onclick = () => setScope(false);
+$('creator-mode').onclick = () => setScope(true);
+$('open-profile').onclick = () => { if (profileLink?.platform === platform) void navigate('open', profileLink.url); };
+$('mode').onclick = () => { demo = !demo; creator = false; void switchPlatform(platform); };
 $('refresh-bots').onclick = () => { void refreshBots(); };
 $('back').onclick = () => { void navigate('back'); };
 $('reload').onclick = () => { void navigate('refresh'); };

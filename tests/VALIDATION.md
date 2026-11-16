@@ -1,22 +1,16 @@
-# Candidate validation
+# Demo validation — 2026-11-16
 
-This record covers the independent 0.5.4 private review candidate. Results are recorded after each check completes; previous build results are not treated as evidence for this candidate.
+Candidate version: 0.5.7 / Android 0.5.7-demo.22. Android and Chrome are the only visitor-facing demo packages; no store publication. macOS is built only for internal shared-runtime verification.
 
-## Completed on 2026-11-13
+- 67 Node tests passed, including synthetic C.AI Recent/My Characters and Tipsy creator-list cases, creator backup boundaries and chat history handling.
+- Chrome ZIP CRC passed; manifest version 0.5.7; unpacked folder and packaged source verified.
+- Android assembleRelease and lintRelease passed. APK v2 signature, application ID, versionCode 22 and non-debuggable status verified. Fixed demo signer; separate app ID from older private debug builds.
+- Internal macOS arm64 DMG build verifies DMG integrity, ASAR, version, architecture and ad-hoc code signature; no public desktop download.
+- Current candidate source and Android/Chrome payloads scanned for known identity markers and previously removed character identifiers: no matches.
+- Download-page English/Chinese switching, Chrome address copy and 390px mobile layout checked; no horizontal overflow.
 
-- 58 Node tests passed, covering pagination, runtime bridges, archive contents, desktop release gates and Android batch behavior.
-- Chrome ZIP: all 24 files match the candidate source byte for byte; CRC passed.
-- macOS arm64 DMG: integrity, application architecture, ASAR contents and local signature checks passed. The 28 ASAR files were reviewed; runtime files match source. Bundle ID is `io.github.quillharbor.roleleaf`; signature is ad-hoc with no Apple Team ID.
-- Android: `assembleDebug` and `lintDebug` passed. APK CRC and v2 signature verification passed. All 10 shared assets, mobile assets and project logo match source. Package is `io.github.quillharbor.roleleaf.test`, version code 15. A fresh per-checkout debug key was used.
-- Candidate source and application-payload scans found no configured internal identity markers or personal home paths. PNG assets contain no textual or EXIF metadata. This is a scoped metadata check, not a guarantee of anonymity.
-- The repository starts with independent history, using the `quillharbor` GitHub noreply identity. No private source history, account records, local dependency links or signing keys are tracked.
+Live source-account exports in the new signed demo have not been re-verified. Prior live results from another app ID are not treated as acceptance for this package. Developer verification registration has not been completed. Same-version reinstall does not prove a future higher-version upgrade; preserve the fixed key and increment versionCode for updates.
 
-Artifact sizes and hashes are recorded in `docs/releases/current.json`.
+Actual artifacts, hashes, installation checks and publication status are recorded in docs/releases/current.json and docs/releases/demo.json. Do not treat a planned URL as a live download.
 
-## Private upload verified on 2026-11-16
-
-The three installers and `SHA256SUMS` were uploaded to draft release `v0.5.4-review.1`. GitHub's reported byte sizes and SHA-256 digests match the local files. The repository is private and the release remains a draft; the license decision is still pending. Uploading these existing artifacts does not add any new live-service or clean-device test coverage.
-
-## Scope
-
-Tests use synthetic fixtures. The originally reported long Tipsy conversation has not been retested live. Clean-device installation, account login, export and upgrade checks remain pending. No Developer ID notarization, production Android signing, or store publication is implied.
+Publication: the Android/Chrome download page and demo prerelease are live. Anonymous downloads matched both package SHA-256 values; the QR SVG matched the locally generated one. The page was viewed in the browser with both platforms and no macOS download. Live account and physical installation acceptance limits above remain unchanged.

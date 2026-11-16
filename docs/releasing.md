@@ -8,3 +8,9 @@
 6. Stop before public distribution. The owner must select a license and approve publication. Resolve the production signing and clean-device acceptance requirements before calling any package a formal release.
 
 Never upload local signing keys, browser profiles, recovery documents, credentials, raw exports or complete local build logs. Preserve upstream licenses and dependency notices.
+
+## Direct-download demo channel
+
+As selected by the owner on 2026-11-16, demo downloads contain only Android and Chrome, never macOS. No store submission is authorized. Publish the two verified demo packages and their checksum file through the download page; keep source GitHub history private. Record the fixed page URL, package hashes and actual access state in `docs/releases/demo.json`. Preserve the fixed Android demo signer for every update. A new page release must point to the same versioned, immutable files used by the validation record.
+
+Current demo publishing uses the separate `quillharbor/roleleaf-demo` public repository and Pages from `main:/docs`. Its deployment script uses the Pages configuration URL to generate the QR. Keep application source and desktop test artifacts in the private review repository.
