@@ -1,6 +1,6 @@
 {
   "name": "roleleaf",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "private": true,
   "description": "Export AI character data and conversations, with explicit provenance and completeness.",
   "engines": {

@@ -1,6 +1,6 @@
 {
   "product": "RoleLeaf",
-  "version": "0.5.9",
+  "version": "0.5.13",
   "date": "2026-11-16",
   "channel": "demo",
   "status": "published",
@@ -22,36 +22,36 @@
   "artifacts": [
     {
       "platform": "android",
-      "version": "0.5.9-demo.25",
-      "path": "android/release/0.5.9-demo.25/RoleLeaf-DEMO-0.5.9-demo.25.apk",
-      "filename": "RoleLeaf-DEMO-0.5.9-demo.25.apk",
-      "bytes": 4403208,
-      "sha256": "c4a359424a67f868a82b15c4b4d6c1306f69c7d94128cec39ae95fa29c856449",
+      "version": "0.5.13-demo.29",
+      "path": "android/release/0.5.13-demo.29/RoleLeaf-DEMO-0.5.13-demo.29.apk",
+      "filename": "RoleLeaf-DEMO-0.5.13-demo.29.apk",
+      "bytes": 4403660,
+      "sha256": "bd82ed0f24f0653aaae3f2f9ba27d03bf4445b0d43c8f4663d490225041bb2a4",
       "minimum": "Android 8+",
       "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 25,
+      "version_code": 29,
       "signing": "fixed demo release key",
       "debuggable": false,
       "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f",
       "architecture": "architecture-independent Java/WebView",
       "channel": "demo",
       "checks": [
-        "73 Node tests",
+        "78 Node tests",
         "assembleRelease and lintRelease",
         "APK CRC, bundled assets, and APK v2 signature"
       ]
     },
     {
       "platform": "chrome",
-      "version": "0.5.9",
-      "path": "dist/RoleLeaf-0.5.9.zip",
-      "filename": "RoleLeaf-0.5.9.zip",
-      "bytes": 356294,
-      "sha256": "7e6bb972de4e421f130f2a7b855e82c6fafea97cdba0319e336dc56d359a0cc1",
+      "version": "0.5.13",
+      "path": "dist/RoleLeaf-0.5.13.zip",
+      "filename": "RoleLeaf-0.5.13.zip",
+      "bytes": 360102,
+      "sha256": "57f09625cddfb1395eb6837b2d0e39179f0935f187b7a5f092d61f636cfa04ad",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
       "checks": [
-        "73 Node tests",
+        "78 Node tests",
         "CRC and bundled assets"
       ]
     }
@@ -61,44 +61,38 @@
   "hosting": "github-pages-branch",
   "publication_authorized": true,
   "checks": [
-    "73 Node tests",
-    "Android assembleRelease, lintRelease and fixed signing certificate",
-    "APK and ZIP CRC, source-to-package assets",
-    "Anonymous downloads and landing page files matched verified digests."
+    "78 Node tests",
+    "Both archives and bundled source checked",
+    "Existing fixed Android signing certificate and package identity verified"
   ],
   "not_verified": [
     "Original Tipsy conversation has not been retested on the live service."
   ],
-  "release_id": 446958937,
-  "release_url": "https://github.com/quillharbor/roleleaf-demo/releases/tag/v0.5.9-demo",
-  "pages_commit": "c7f463c4ff2aabfed3a355ad909495072a9b082a",
+  "qr_status": "published_and_verified",
+  "deployment_source": "main:/docs",
+  "release_id": 447020968,
+  "release_url": "https://github.com/quillharbor/roleleaf-demo/releases/tag/v0.5.13-demo",
+  "pages_commit": "f372b872619ad890dca997b15dfcefbf96f3037d",
+  "anonymous_download_verified": true,
+  "published_at": "2026-11-16T20:38:29+08:00",
   "assets_verified": [
     {
-      "name": "RoleLeaf-0.5.9.zip",
-      "bytes": 356294,
-      "sha256": "sha256:7e6bb972de4e421f130f2a7b855e82c6fafea97cdba0319e336dc56d359a0cc1",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.9-demo/RoleLeaf-0.5.9.zip"
+      "name": "RoleLeaf-0.5.13.zip",
+      "bytes": 360102,
+      "sha256": "sha256:57f09625cddfb1395eb6837b2d0e39179f0935f187b7a5f092d61f636cfa04ad",
+      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.13-demo/RoleLeaf-0.5.13.zip"
     },
     {
-      "name": "RoleLeaf-DEMO-0.5.9-demo.25.apk",
-      "bytes": 4403208,
-      "sha256": "sha256:c4a359424a67f868a82b15c4b4d6c1306f69c7d94128cec39ae95fa29c856449",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.9-demo/RoleLeaf-DEMO-0.5.9-demo.25.apk"
+      "name": "RoleLeaf-DEMO-0.5.13-demo.29.apk",
+      "bytes": 4403660,
+      "sha256": "sha256:bd82ed0f24f0653aaae3f2f9ba27d03bf4445b0d43c8f4663d490225041bb2a4",
+      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.13-demo/RoleLeaf-DEMO-0.5.13-demo.29.apk"
     },
     {
       "name": "SHA256SUMS",
-      "bytes": 183,
-      "sha256": "sha256:5d47c4fe7331d2ebaf8e4467560343f3450135d25cf4bdcc54f8cb1cf6c7c934",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.9-demo/SHA256SUMS"
+      "bytes": 185,
+      "sha256": "sha256:06270fe608c83677c1d5024bb0095dd1ecc3d501136c13fcf986f49b0487a755",
+      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.13-demo/SHA256SUMS"
     }
-  ],
-  "anonymous_download_verified": true,
-  "qr_status": "published_and_verified",
-  "published_at": "2026-11-16T19:39:03+08:00",
-  "deployment_source": "main:/docs",
-  "hosting_bundle": {
-    "path": "dist/RoleLeaf-demo-0.5.9-github-pages.zip",
-    "bytes": 5982546,
-    "sha256": "3ef8b31fd34fd4844184cd7ff25aef48905896f2b1cf577a358b20f5fb1b1ed4"
-  }
+  ]
 }

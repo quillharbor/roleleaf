@@ -68,7 +68,10 @@
       if (!rows.length && (q.sequence === '0' || (previousMin && BigInt(q.sequence) === BigInt(previousMin) - 1n))) {
         this.ended = true; this.endReason = q.sequence === '0' ? 'empty_current_history' : 'empty_older_page';
       }
-      this.pages.push({ cursor: q.sequence, count: rows.length, captured_at: new Date().toISOString() });
+      const sequences = rows.map(m => BigInt(m.sequence)).sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+      this.pages.push({ cursor: q.sequence, count: rows.length, captured_at: new Date().toISOString(),
+        first_sequence: sequences[0]?.toString(),
+        requested_through: q.sequence === '0' ? sequences.at(-1)?.toString() : q.sequence });
       if (this.pages.length > 1000) this.pages.shift();
       this.revision++; this.error = '';
     }
@@ -76,13 +79,20 @@
     summary() {
       const rows = this.sorted(), gaps = [];
       for (let i = 1; i < rows.length; i++) if (BigInt(rows[i].sequence) - BigInt(rows[i - 1].sequence) > 1n) gaps.push([rows[i - 1].sequence, rows[i].sequence]);
+      const reachedStart = this.latest && this.ended && !this.error;
+      // Require a captured response spanning every missing range. Reaching the
+      // first sequence alone cannot rule out a missed page between two cursors.
+      const gapsFromSource = reachedStart && gaps.length > 0 && gaps.every(([before, after]) =>
+        this.pages.some(page => page.first_sequence !== undefined &&
+          BigInt(page.first_sequence) <= BigInt(before) &&
+          BigInt(page.requested_through) >= BigInt(after) - 1n));
       return { character_id: this.id, conversation_id: this.conversationId, latest_page_captured: this.latest,
         server_start_reached: this.ended, end_reason: this.endReason,
         records: rows.length, text_messages: rows.filter(m => m.content_type === 'text').length,
         events: rows.filter(m => m.content_type !== 'text').length,
         min_sequence: rows[0]?.sequence || null, max_sequence: rows.at(-1)?.sequence || null,
-        sequence_gaps: gaps, pages: this.pages.length, bytes: this.bytes, error: this.error,
-        complete_current_mainline: this.latest && this.ended && gaps.length === 0 && !this.error,
+        sequence_gaps: gaps, gaps_from_source: gapsFromSource, pages: this.pages.length, bytes: this.bytes, error: this.error,
+        complete_current_mainline: reachedStart && gaps.length === 0,
         all_regeneration_variants_verified: false };
     }
     export(name = '') {

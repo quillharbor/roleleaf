@@ -3,6 +3,19 @@ const env=vm.createContext({URL,TextEncoder,TextDecoder,Uint8Array,DataView,Uint
 for(const f of ['core.js','png.js','bot-model.js','cai.js','bot-package.js'])vm.runInContext(fs.readFileSync('tipsy-exporter/'+f,'utf8'),env);
 const {BotModel:M,BotCai:C,BotPackage:P}=env,copy=x=>JSON.parse(JSON.stringify(x));
 const bot='synthetic_bot_123',chat='chat-one';
+test('Tipsy source gaps have their own ZIP coverage status; uncovered gaps remain partial', async () => {
+ const build = (gapsFromSource) => P.build({
+  model: { platform: 'tipsy', id: '100000001', name: 'Synthetic' },
+  conversations: [{ id: chat, messages: [], completeness: {
+   complete_current_mainline: false, sequence_gaps: [['2', '5']], gaps_from_source: gapsFromSource,
+  } }],
+  scope: { actual: 'current_conversation', conversation_list_complete: false }, assets: [], files: [],
+ });
+ const saved = await build(true);
+ assert.equal(saved.report.chats.status, 'captured_mainlines_with_source_gaps');
+ assert.equal(saved.manifest.complete, false);
+ assert.equal((await build(false)).report.chats.status, 'partial');
+});
 const turn=(id,content,time)=>({turn_key:{chat_id:chat,turn_id:id},create_time:time,author:{author_id:bot},state:'STATE_OK',primary_candidate_id:'selected',candidates:[{candidate_id:'old',raw_content:'old candidate',is_final:true},{candidate_id:'selected',raw_content:content,is_final:true}]});
 const payload=(turns,next_token)=>({turns,meta:{next_token}});
 function unzip(data){const b=Buffer.from(data),out={};let at=0;while(b.readUInt32LE(at)===0x04034b50){const size=b.readUInt32LE(at+18),n=b.readUInt16LE(at+26),extra=b.readUInt16LE(at+28),name=b.toString('utf8',at+30,at+30+n),start=at+30+n+extra;out[name]=b.subarray(start,start+size);assert.equal(P.pathOK(name),true);assert.equal(P.zip([{path:name,data:out[name]}]).length>0,true);at=start+size;}assert.equal(b.readUInt32LE(at),0x02014b50);return out;}

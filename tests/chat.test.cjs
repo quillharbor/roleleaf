@@ -37,6 +37,18 @@ test('large sequences retain precision; gaps and errors prohibit complete claims
  const h=new History(id);h.accept(q('0'),{code:0,data:[row('9007199254740993'),row('9007199254740994')]});
  assert.equal(h.sorted()[0].sequence,'9007199254740993');
  const g=new History(id);g.accept(q('0'),{code:0,data:[row(1),row(3)]});assert.equal(g.summary().complete_current_mainline,false);
+ assert.equal(g.summary().gaps_from_source,true);
+ const unverified=new History(id);
+ unverified.accept(q('0'),{code:0,data:[row(5),row(6)]});
+ unverified.accept(q('2'),{code:0,data:[row(1),row(2)]});
+ assert.equal(unverified.summary().server_start_reached,true);
+ assert.equal(unverified.summary().gaps_from_source,false);
+ const paged=new History(id);
+ paged.accept(q('0'),{code:0,data:[row(5),row(6)]});
+ paged.accept(q('4'),{code:0,data:[row(1),row(2)]});
+ assert.equal(paged.summary().gaps_from_source,true);
+ paged.error='network';
+ assert.equal(paged.summary().gaps_from_source,false);
  const e=new History(id);e.accept(q('0'),{code:0,data:[row(1)]});e.error='network';assert.equal(e.summary().complete_current_mainline,false);
 });
 test('scope filtering and credential fields are excluded without rewriting message text',()=>{

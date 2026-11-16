@@ -1,6 +1,6 @@
 {
   "product": "RoleLeaf",
-  "release": "0.5.12",
+  "release": "0.5.13",
   "status": "private-review",
   "license": "pending; source remains private",
   "locales": [
@@ -14,25 +14,26 @@
   "artifacts": [
     {
       "platform": "chrome",
-      "path": "dist/RoleLeaf-0.5.12.zip",
-      "filename": "RoleLeaf-0.5.12.zip",
-      "version": "0.5.12",
-      "bytes": 358247,
-      "sha256": "5454b1bd2ba4fcc73bf81e069edba95ad3c038792ac7c65cb30d81a91ed61c88",
+      "path": "dist/RoleLeaf-0.5.13.zip",
+      "filename": "RoleLeaf-0.5.13.zip",
+      "version": "0.5.13",
+      "bytes": 360102,
+      "sha256": "57f09625cddfb1395eb6837b2d0e39179f0935f187b7a5f092d61f636cfa04ad",
       "architecture": "architecture-independent Chrome extension",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
       "checks": [
+        "78 Node tests",
         "ZIP CRC and bundled source"
       ]
     },
     {
       "platform": "macos",
-      "path": "desktop/release/0.5.12-arm64-IBo8cY/RoleLeaf-TEST-ONLY-0.5.12-arm64.dmg",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.12-arm64.dmg",
-      "version": "0.5.12",
-      "bytes": 108806117,
-      "sha256": "a84ff9c241f6fba30ac590e4c9ac9cb42ba4924209b51e7fd96f3c000fa4575b",
+      "path": "desktop/release/0.5.13-arm64-UzVpKY/RoleLeaf-TEST-ONLY-0.5.13-arm64.dmg",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.13-arm64.dmg",
+      "version": "0.5.13",
+      "bytes": 108800499,
+      "sha256": "33b280ffea6b8ab5e3bbbb00c7028813031167ed31c7a7026b319d5f2687aa8b",
       "architecture": "arm64",
       "minimum": "macOS 13",
       "signing": "ad-hoc",
@@ -40,37 +41,39 @@
       "status": "TEST-ONLY",
       "bundle_id": "io.github.quillharbor.roleleaf",
       "checks": [
+        "78 Node tests",
         "DMG, ASAR, version, architecture and ad-hoc signature"
       ]
     },
     {
       "platform": "android",
-      "path": "android/release/0.5.12-demo.28/RoleLeaf-TEST-ONLY-0.5.12-demo.28.apk",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.12-demo.28.apk",
-      "version": "0.5.12-demo.28",
-      "bytes": 4930196,
-      "sha256": "762491a573c969b124614ba56f329b4b346585318ed5b61de9a8d677d977d620",
+      "path": "android/release/0.5.13-demo.29/RoleLeaf-TEST-ONLY-0.5.13-demo.29.apk",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.13-demo.29.apk",
+      "version": "0.5.13-demo.29",
+      "bytes": 4930908,
+      "sha256": "53996c56f4f106f22a4d6135990a05f9dd1ef7f02be6e14de6e1d2a1536f641d",
       "architecture": "architecture-independent Java/WebView",
       "minimum": "Android 8+",
       "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 28,
+      "version_code": 29,
       "signing": "candidate debug key",
       "debuggable": true,
       "status": "TEST-ONLY",
       "certificate_sha256": "8f0f8f29a450c64588e6f4a0e687aef1213a160f598d4cf214fbeaba06ad515e",
       "checks": [
+        "78 Node tests",
         "assembleDebug, lintDebug, APK CRC, signature and bundled source"
       ]
     }
   ],
   "checks": [
-    "77 Node tests",
-    "ZIP, DMG and APK integrity and bundled source checks"
+    "78 Node tests",
+    "ZIP CRC, bundled source, DMG and APK verification"
   ],
   "not_verified": [
     "Candidate packages have not been used with a live account.",
     "Production macOS signing and notarization."
   ],
   "demo_url": "https://quillharbor.github.io/roleleaf-demo/",
-  "checksum_path": "dist/RoleLeaf-0.5.12-private-review/SHA256SUMS"
+  "checksum_path": "dist/RoleLeaf-0.5.13-installers/SHA256SUMS"
 }

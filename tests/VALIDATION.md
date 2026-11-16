@@ -30,3 +30,7 @@ Both Android builds passed 69 Node tests, assembly, lint, and signature verifica
 ## Private review 0.5.12
 
 77 automated tests passed. Synthetic exports verify stable match IDs across repeated exports and both export modes. Synthetic Tipsy cases verify history recovery and visible missing sequence ranges. The candidate ZIP, arm64 DMG and debug APK were rebuilt, and their archives, bundled exporter and available signatures were checked. Candidate live-account export and clean-device installation remain pending.
+
+## 0.5.13 Tipsy source gaps
+
+78 automated tests passed. Captured Tipsy responses spanning every missing sequence range produce a saved result with the gap notice and no retry button. Cursor jumps without evidence, capture errors and incomplete pagination remain partial. The ZIP report retains sequence gaps and marks full mainline coverage as false. The three packages were built and verified; live-account and clean-device acceptance for this revision are pending.

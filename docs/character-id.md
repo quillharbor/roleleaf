@@ -32,6 +32,7 @@
 - `messages.json` 使用 `bot_messages_v1`。保留 `messages` 的原始顺序、`id`、`role`、`content_type` 和 `timestamp`。用 `content` 读取已选中的正文。`null` 表示已选回复文本未知，不能用第一个候选代替。
 - 保留 `candidates` 中已取得的回复候选。`selected_candidate_id` 存在时，对应候选的 `candidate_id`。原始候选覆盖尚未验证，空数组也不能证明源站从未生成过其他回复。
 - `completeness.complete_current_mainline` 描述当前会话主线。结合报告的 `stopped`、`warnings` 和各区状态显示缺项。`manifest.complete: false` 的部分包仍可读取。`manifest.complete: true` 只覆盖该包声明的范围。
+- Tipsy 的 `gaps_from_source: true` 表示缺号范围均可由已捕获的响应证实。报告使用 `captured_mainlines_with_source_gaps`，结果显示 Saved，消息序号缺口仍见 `sequence_gaps`。包内的 `complete_current_mainline` 仍为 false。
 - 创作者资料中的 `metadata_only` 表示只拿到引用或摘要。空值、缺失和仅有引用应分别处理。
 
 ## 4. 用 `match_id` 匹配角色

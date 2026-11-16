@@ -222,7 +222,7 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
       imageCount: media.assets.length,
       partialReason: output.report.chats.conversations?.find(conversation => conversation.error)?.error,
       sequenceGaps: route.platform === 'tipsy' ? conversations[0]?.completeness.sequence_gaps : undefined,
-      partial: output.report.chats.status !== 'captured_mainlines_complete' ||
+      partial: output.report.chats.status === 'partial' ||
         output.report.images.status === 'partial' || output.report.stopped ||
         model.assets.length > media.assets.length,
     };
