@@ -1,7 +1,7 @@
 {
   "product": "RoleLeaf",
-  "release": "0.5.9",
-  "status": "demo-published; macos-internal-only",
+  "release": "0.5.12",
+  "status": "private-review",
   "license": "pending; source remains private",
   "locales": [
     "en",
@@ -13,67 +13,64 @@
   "default_locale": "en",
   "artifacts": [
     {
-      "platform": "android",
-      "version": "0.5.9-demo.25",
-      "path": "android/release/0.5.9-demo.25/RoleLeaf-DEMO-0.5.9-demo.25.apk",
-      "filename": "RoleLeaf-DEMO-0.5.9-demo.25.apk",
-      "bytes": 4403208,
-      "sha256": "c4a359424a67f868a82b15c4b4d6c1306f69c7d94128cec39ae95fa29c856449",
-      "minimum": "Android 8+",
-      "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 25,
-      "signing": "fixed demo release key",
-      "debuggable": false,
-      "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f",
-      "architecture": "architecture-independent Java/WebView",
-      "channel": "demo",
-      "checks": [
-        "73 Node tests",
-        "assembleRelease and lintRelease",
-        "APK CRC, bundled assets, and APK v2 signature"
-      ]
-    },
-    {
       "platform": "chrome",
-      "version": "0.5.9",
-      "path": "dist/RoleLeaf-0.5.9.zip",
-      "filename": "RoleLeaf-0.5.9.zip",
-      "bytes": 356294,
-      "sha256": "7e6bb972de4e421f130f2a7b855e82c6fafea97cdba0319e336dc56d359a0cc1",
+      "path": "dist/RoleLeaf-0.5.12.zip",
+      "filename": "RoleLeaf-0.5.12.zip",
+      "version": "0.5.12",
+      "bytes": 358247,
+      "sha256": "5454b1bd2ba4fcc73bf81e069edba95ad3c038792ac7c65cb30d81a91ed61c88",
+      "architecture": "architecture-independent Chrome extension",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
       "checks": [
-        "73 Node tests",
-        "CRC and bundled assets"
+        "ZIP CRC and bundled source"
       ]
     },
     {
       "platform": "macos",
-      "version": "0.5.9",
-      "path": "desktop/release/0.5.9-arm64-w79Ipt/RoleLeaf-TEST-ONLY-0.5.9-arm64.dmg",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.9-arm64.dmg",
-      "bytes": 108806191,
-      "sha256": "4743905b44ba55a81cd903ce497476120929f7b8aaed08a0db8fa4ee1cc3a05f",
+      "path": "desktop/release/0.5.12-arm64-IBo8cY/RoleLeaf-TEST-ONLY-0.5.12-arm64.dmg",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.12-arm64.dmg",
+      "version": "0.5.12",
+      "bytes": 108806117,
+      "sha256": "a84ff9c241f6fba30ac590e4c9ac9cb42ba4924209b51e7fd96f3c000fa4575b",
       "architecture": "arm64",
       "minimum": "macOS 13",
       "signing": "ad-hoc",
       "notarized": false,
-      "distribution": "internal-only",
-      "exposed_in_demo": false,
+      "status": "TEST-ONLY",
+      "bundle_id": "io.github.quillharbor.roleleaf",
       "checks": [
-        "DMG, ASAR and ad-hoc signature checked by packaging script"
+        "DMG, ASAR, version, architecture and ad-hoc signature"
+      ]
+    },
+    {
+      "platform": "android",
+      "path": "android/release/0.5.12-demo.28/RoleLeaf-TEST-ONLY-0.5.12-demo.28.apk",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.12-demo.28.apk",
+      "version": "0.5.12-demo.28",
+      "bytes": 4930196,
+      "sha256": "762491a573c969b124614ba56f329b4b346585318ed5b61de9a8d677d977d620",
+      "architecture": "architecture-independent Java/WebView",
+      "minimum": "Android 8+",
+      "application_id": "io.github.quillharbor.roleleaf.demo",
+      "version_code": 28,
+      "signing": "candidate debug key",
+      "debuggable": true,
+      "status": "TEST-ONLY",
+      "certificate_sha256": "8f0f8f29a450c64588e6f4a0e687aef1213a160f598d4cf214fbeaba06ad515e",
+      "checks": [
+        "assembleDebug, lintDebug, APK CRC, signature and bundled source"
       ]
     }
   ],
   "checks": [
-    "73 Node tests",
-    "Android assembleRelease, lintRelease and fixed signing certificate",
-    "APK and ZIP CRC, source-to-package assets",
-    "DMG, ASAR and ad-hoc signature checked by packaging script"
+    "77 Node tests",
+    "ZIP, DMG and APK integrity and bundled source checks"
   ],
   "not_verified": [
-    "Original Tipsy conversation has not been retested on the live service.",
-    "Production macOS signing and notarization"
+    "Candidate packages have not been used with a live account.",
+    "Production macOS signing and notarization."
   ],
-  "demo_url": "https://quillharbor.github.io/roleleaf-demo/"
+  "demo_url": "https://quillharbor.github.io/roleleaf-demo/",
+  "checksum_path": "dist/RoleLeaf-0.5.12-private-review/SHA256SUMS"
 }

@@ -91,6 +91,8 @@ RoleLeafI18n.register([
   ["Timed out waiting for an earlier chat history response.", "انتهت مهلة انتظار الرسائل السابقة.", "以前のメッセージの応答がタイムアウトしました。", "이전 메시지 응답을 기다리다 시간이 초과되었습니다.", "等候較早的聊天記錄回應逾時。"],
   ["Earlier chat history did not contain new messages.", "لم تتضمن الرسائل السابقة أي رسائل جديدة.", "取得した履歴に新しいメッセージはありませんでした。", "이전 대화 기록에 새 메시지가 없었습니다.", "取得的較早記錄沒有新增訊息。"],
   ["The chat page did not request earlier messages.", "لم تطلب صفحة المحادثة الرسائل السابقة.", "チャットページが以前のメッセージをリクエストしませんでした。", "대화 페이지가 이전 메시지를 요청하지 않았습니다.", "聊天頁面未要求載入較早的訊息。"],
+  ["Tipsy did not return message sequences {sequences}.", "لم يُرجع Tipsy الرسائل ذات الأرقام {sequences}.", "Tipsy からメッセージ番号 {sequences} が返されませんでした。", "Tipsy에서 메시지 번호 {sequences}을(를) 반환하지 않았습니다.", "Tipsy 未回傳序號為 {sequences} 的訊息。"],
+  ["Tipsy did not return message sequences {sequences} and more. See the ZIP report.", "لم يُرجع Tipsy الرسائل ذات الأرقام {sequences} وأرقامًا أخرى. راجع تقرير ZIP.", "Tipsy からメッセージ番号 {sequences} などが返されませんでした。ZIP のレポートを確認してください。", "Tipsy에서 메시지 번호 {sequences} 등을 반환하지 않았습니다. ZIP 보고서를 확인하세요.", "Tipsy 未回傳序號為 {sequences} 等訊息。請查看 ZIP 內的報告。"],
   ["Retry failed or skipped items", "أعد محاولة العناصر المتعذّرة أو المُتخطّاة", "失敗またはスキップした項目を再試行", "실패하거나 건너뛴 항목 다시 시도", "重試失敗或略過的項目"],
   ["My Characters export", "تصدير شخصياتي", "マイキャラクターのエクスポート", "내 캐릭터 내보내기", "匯出我的角色"],
   ["Chrome downloads / {folder}", "تنزيلات Chrome / {folder}", "Chrome のダウンロード / {folder}", "Chrome 다운로드 / {folder}", "Chrome 下載 / {folder}"],

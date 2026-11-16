@@ -63,16 +63,19 @@
   };
   // Copy only documented character fields, and cap site-controlled data before crossing the bridge.
   const nestedKeys = new Set('id name title content text label role message voice_id speed reply_requirement lorebook_id display_name tag_id tag_name key world_book_key entry_count character_id nickname image_url plot_file_key content_prefix tagline greeting_rich_text optimization_code output_format_config type keywords entries enabled description rules initial_value variables operator value condition conditions actions'.split(' '));
-  function fieldValue(value, depth = 0, budget = { left: 1500000 }) {
+  function fieldValue(value, depth = 0, budget = { left: 1500000 }, characterId) {
     if (depth > 10 || --budget.left < 0) return null;
     if (typeof value === 'string') {
       budget.left -= value.length;
       return budget.left >= 0 ? value : null;
     }
     if (value == null || typeof value === 'boolean' || Number.isFinite(value)) return value ?? null;
-    if (Array.isArray(value)) return value.slice(0, 500).map(x => fieldValue(x, depth + 1, budget));
-    if (typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([key]) => nestedKeys.has(key))
-      .map(([key, val]) => [key, fieldValue(val, depth + 1, budget)]));
+    if (Array.isArray(value)) return value.slice(0, 500).map(x => fieldValue(x, depth + 1, budget, characterId));
+    if (typeof value === 'object') return Object.fromEntries(Object.entries(value)
+      .filter(([key, val]) => nestedKeys.has(key) &&
+        !(characterId && (key === 'id' || key === 'character_id') &&
+          (val === characterId || typeof val === 'number' && String(val) === characterId)))
+      .map(([key, val]) => [key, fieldValue(val, depth + 1, budget, characterId)]));
     return null;
   }
   function snapshot(platform, id, raw, tags, rich) {
@@ -122,7 +125,7 @@
     if (data.clipped) warnings.push('Some fields exceeded the export size limit.');
     for (const [field, keys] of Object.entries(fieldsBySite[route.platform])) {
       const item = data.values?.[field], key = keys.includes(item?.key) ? item.key : null;
-      const value = key ? fieldValue(item.value) : null;
+      const value = key ? fieldValue(item.value, 0, undefined, route.id) : null;
       const empty = value === '' || Array.isArray(value) && !value.length;
       const status = value == null ? 'missing' : empty ? 'empty' :
         ['world_books','linked_characters','plot_file','lorebook'].includes(field) ? 'metadata_only' : 'available';
@@ -138,7 +141,7 @@
     const capturedAt = new Date().toISOString();
     const examples = route.platform === 'tipsy' && Array.isArray(value('example_dialogue'))
       ? root.TipsyExporterCore.examples(value('example_dialogue')).value : string('example_dialogue');
-    const source = { kind: 'creator_editor', source_url: editor(data.url).url,
+    const source = { kind: 'creator_editor',
       values: Object.fromEntries(Object.entries(fields).filter(([,f]) => f.status !== 'missing').map(([k,f]) => [k,f.value])) };
     const card = { spec: 'chara_card_v2', spec_version: '2.0', data: {
       name: data.name, description: string('description'), personality: string('definition'), scenario: string('scenario'),
@@ -148,7 +151,7 @@
       tags, extensions: { [route.platform]: source },
     } };
     return { schema: 'bot_character_v1', platform: route.platform, id: route.id, name: data.name,
-      source_url: source.source_url, captured_at: capturedAt, fields, assets, source, card, warnings };
+      captured_at: capturedAt, fields, assets, source, card, warnings };
   }
   root.BotCreator = Object.freeze({ origins, platformOf, profile, editor, target, idOK, media, caiAvatar, snapshot, caiEditor, model });
 })(globalThis);

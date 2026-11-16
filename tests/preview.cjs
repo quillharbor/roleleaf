@@ -21,6 +21,7 @@ window.chrome={
  }},
  tabs:{
   query:async()=>[{id:1,url:bots[0].url}],
+  getCurrent:async()=>null,
   get:async id=>({id,url:tabs.get(id).url}),
   reload:async()=>{},
   create:async({url})=>{

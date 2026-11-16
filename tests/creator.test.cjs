@@ -50,7 +50,8 @@ test('Tipsy packages use the original creator definition, contain no chats and p
   const raw = { character: { character_id: tipsyId, nickname: '角色 🌙', is_public: false, background: 'public version',
     greeting: 'Authored opening', face_url: avatar, dialog_style: [{ role: 'assistant', message: 'Hello' }] },
     background: 'Original authored definition', origin_image_url: 'https://img.tipsy.chat/cover.png',
-    world_books: [{ name: 'Book', world_book_key: 'key', entry_count: 2, email: 'must-not-export' }] };
+    world_books: [{ name: 'Book', world_book_key: 'key', entry_count: 2, email: 'must-not-export' }],
+    role_characters: [{ character_id: tipsyId, name: 'Self' }, { character_id: '1000000000799', name: 'Linked' }] };
   assert.equal(C.snapshot('tipsy', tipsyId, { character: raw.character }), null);
   const model = C.model(C.target('tipsy', tipsyId, tipsyProfile), { ...C.snapshot('tipsy', tipsyId, raw), url: tipsyEditor });
   assert.equal(model.fields.visibility.value, false);
@@ -62,7 +63,14 @@ test('Tipsy packages use the original creator definition, contain no chats and p
   assert.equal(built.report.character.status, 'partial');
   assert.equal(built.manifest.scope.actual, 'creator_character');
   assert.equal(built.manifest.is_creator, true);
-  assert.match(built.manifest.character_id.ciphertext, /^[a-f0-9]{512}$/);
+  const ordinary = await P.build({ model, conversations: [], scope: { actual: 'current_conversation' },
+    assets: [], files: [], started: '2026-11-16' });
+  assert.match(built.manifest.match_id, /^[a-f0-9]{64}$/);
+  assert.equal(built.manifest.match_id, ordinary.manifest.match_id);
+  assert.equal(built.manifest.character_id, undefined);
+  for (const file of built.files) assert.ok(!file.data.includes(tipsyId), file.path);
+  assert.deepEqual(model.fields.linked_characters.value,
+    [{ name: 'Self' }, { character_id: '1000000000799', name: 'Linked' }]);
   assert.ok(!built.files.some(item => item.path.startsWith('conversations/')));
   assert.match(built.files.find(item => item.path === 'README.html').data, /Creator backup/);
   assert.doesNotMatch(built.files.find(item => item.path === 'provenance/source.json').data, /must-not-export|public version/);

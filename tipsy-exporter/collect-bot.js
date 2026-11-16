@@ -221,6 +221,7 @@ async function collectBot({ tabId, route, worker = false, expectedConversationId
       images: media.assets.filter(asset => asset.status === 'saved').length,
       imageCount: media.assets.length,
       partialReason: output.report.chats.conversations?.find(conversation => conversation.error)?.error,
+      sequenceGaps: route.platform === 'tipsy' ? conversations[0]?.completeness.sequence_gaps : undefined,
       partial: output.report.chats.status !== 'captured_mainlines_complete' ||
         output.report.images.status === 'partial' || output.report.stopped ||
         model.assets.length > media.assets.length,
@@ -295,7 +296,7 @@ async function collectCreator({ tabId, route, tabs = chrome.tabs, signal, progre
   signal.throwIfAborted();
   return {
     bytes: output.bytes,
-    filename: `${route.platform}_creator_${BotModel.safe(model.name)}_${route.id}_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`,
+    filename: `${route.platform}_creator_${BotModel.safe(model.name)}_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`,
     messages: 0, conversations: 0, images: media.assets.filter(asset => asset.status === 'saved').length,
     imageCount: media.assets.length, partial: output.report.character.status === 'partial' ||
       output.report.images.status === 'partial' || model.assets.length > media.assets.length,

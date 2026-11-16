@@ -11,7 +11,7 @@ const statuses = {
   pending: 'Queued', running: 'Exporting', saved: 'Saved',
   partial: 'Saved · Partial', failed: 'Failed', skipped: 'Skipped',
 };
-let controller, working = false, workerTab, job;
+let controller, working = false, workerTab, queueTabToRestore, job;
 
 $('version').textContent = t('BOT EXPORTER') + ' · ' + chrome.runtime.getManifest().version;
 
@@ -39,6 +39,16 @@ function counts(output) {
   return t("Images: {saved} of {total} · Messages: {messages}", { saved: output.images, total: output.imageCount, messages: output.messages });
 }
 
+function describeSequenceGaps(gaps) {
+  const sequences = gaps.slice(0, 6).map(([before, after]) => {
+    const first = BigInt(before) + 1n;
+    const last = BigInt(after) - 1n;
+    return first === last ? String(first) : `${first}–${last}`;
+  }).join(', ');
+  if (gaps.length > 6) return t('Tipsy did not return message sequences {sequences} and more. See the ZIP report.', { sequences });
+  return t('Tipsy did not return message sequences {sequences}.', { sequences });
+}
+
 async function collectSelectedBot({ route, url, current, progress, onCharacter }) {
   let expectedConversationId = null;
   if (current && route.platform === 'tipsy') {
@@ -55,11 +65,17 @@ async function collectSelectedBot({ route, url, current, progress, onCharacter }
     url = tab.url; // Preserve any explicit conversation/language query.
   }
   controller.signal.throwIfAborted();
-  const worker = route.platform === 'tipsy' || !current;
+  const tipsy = route.platform === 'tipsy';
+  const worker = tipsy || !current;
   if (worker) {
+    const queueTab = tipsy ? await chrome.tabs.getCurrent() : null;
+    controller.signal.throwIfAborted();
     progress(t('Reloading chat history to get the latest messages…'));
-    const tab = await chrome.tabs.create({ url, active: false });
+    // Tipsy's history loader relies on scroll events that a hidden Chrome tab
+    // can suppress. Let the worker render in the foreground from the first load.
+    const tab = await chrome.tabs.create({ url, active: tipsy, ...(queueTab && { windowId: queueTab.windowId }) });
     workerTab = tab.id;
+    queueTabToRestore = queueTab?.id;
     controller.signal.throwIfAborted();
   }
   const output = await collectBot({
@@ -155,7 +171,12 @@ function renderBatch() {
 async function closeWorker() {
   if (workerTab == null) return;
   const id = workerTab;
+  const queueId = queueTabToRestore;
   workerTab = null;
+  queueTabToRestore = null;
+  if (queueId != null && (await chrome.tabs.get(id).catch(() => null))?.active) {
+    await chrome.tabs.update(queueId, { active: true }).catch(() => {});
+  }
   await chrome.tabs.remove(id).catch(() => {});
 }
 
@@ -192,6 +213,7 @@ async function runBot(bot) {
     bot.status = output.partial ? 'partial' : 'saved';
     bot.detail = job.creator ? t("Images: {saved} of {total} · Creator settings", { saved: output.images, total: output.imageCount }) : counts(output);
     if (output.partial && output.partialReason) bot.detail += ' · ' + t(output.partialReason);
+    if (output.sequenceGaps?.length) bot.detail += ' · ' + describeSequenceGaps(output.sequenceGaps);
     bot.savedDetail = bot.detail;
   } catch (error) {
     bot.status = controller.signal.aborted && error === controller.signal.reason ? 'skipped' : 'failed';

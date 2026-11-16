@@ -23,6 +23,8 @@ RoleLeaf opens in English. On Android, tap **⋮ → Language** in the toolbar. 
 
 Creator backups and current-conversation exports have different coverage. Missing fields and incomplete history are reported; a successful ZIP does not guarantee a complete account backup.
 
+The 0.5.12 candidate exposes a stable `match_id` in exported ZIPs. See the [ZIP parsing rules](docs/character-id.md).
+
 ## Development
 
 Node.js 22+ is required. Run `npm test` and `npm run package` for Chrome; see [building](docs/building.md) for other build commands. The source repository remains private and `UNLICENSED` pending the owner's open-source license decision. Demo distribution does not publish repository history or grant an open-source license. Third-party components retain their licenses in [THIRD_PARTY.md](THIRD_PARTY.md).

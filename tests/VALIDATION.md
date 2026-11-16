@@ -26,3 +26,7 @@ Both Android builds passed 69 Node tests, assembly, lint, and signature verifica
 ## Tipsy history and retry in 0.5.9
 
 73 automated tests passed. After a simulated virtual list remount, pagination recovered records 1–16 from an initial page of records 17–26. No-request and in-flight timeout cases keep the available history and report distinct outcomes. Chrome batch retries only the selected partial row. A failed retry preserves the prior saved result. The original live conversation has not been retested.
+
+## Private review 0.5.12
+
+77 automated tests passed. Synthetic exports verify stable match IDs across repeated exports and both export modes. Synthetic Tipsy cases verify history recovery and visible missing sequence ranges. The candidate ZIP, arm64 DMG and debug APK were rebuilt, and their archives, bundled exporter and available signatures were checked. Candidate live-account export and clean-device installation remain pending.

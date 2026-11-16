@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const VERSION = '0.5.9';
+  const VERSION = '0.5.12';
   const CHANNEL = 'tipsy-character-exporter-v1';
   const MAX_BYTES = 16 * 1024 * 1024;
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o || {}, k);

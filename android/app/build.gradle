@@ -19,8 +19,8 @@ android {
         applicationId 'io.github.quillharbor.roleleaf.demo'
         minSdk 26
         targetSdk 35
-        versionCode 25
-        versionName '0.5.9-demo.25'
+        versionCode 28
+        versionName '0.5.12-demo.28'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

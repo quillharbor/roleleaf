@@ -62,7 +62,7 @@ test('Tipsy mobile recent cards use stable ids and exclude previews and delete a
  env.location=new URL('https://tipsy.chat/');assert.equal(env.BotSidebar.read().found,false);
 });
 
-function queueFixture({ stopAfterFirst = false, partialFirst = false } = {}) {
+function queueFixture({ stopAfterFirst = false, partialFirst = false, sequenceGaps } = {}) {
   const key = 'batch:12345678-abcd-4000-8000-123456789012';
   const bots = ['100000001', '100000002', '100000003'].map(id => ({
     id, url: `https://tipsy.chat/chat/${id}?session=keep`, name: id,
@@ -85,9 +85,10 @@ function queueFixture({ stopAfterFirst = false, partialFirst = false } = {}) {
     chrome: {
       runtime: { getManifest: () => ({ version: '0.5.0' }) },
       tabs: {
+        getCurrent: async () => null,
         get: async () => ({ url: bots[0].url }),
         create: async ({ url, active }) => {
-          assert.equal(active, false);
+          assert.equal(active, true);
           assert.equal(workerOpen, false);
           workerOpen = true;
           operations.push(['open', url]);
@@ -115,9 +116,10 @@ function queueFixture({ stopAfterFirst = false, partialFirst = false } = {}) {
       onCharacter(route.id);
       const attempt = route.id === bots[0].id ? ++firstAttempts : 0;
       if (partialFirst && attempt === 2) throw Error('synthetic retry failure');
-      const partial = partialFirst && attempt === 1;
+      const partial = (partialFirst || Boolean(sequenceGaps)) && attempt === 1;
       return { filename: `${route.id}.zip`, images: 1, imageCount: 1, messages: 3, partial,
-        partialReason: partial ? 'The chat page did not request earlier messages.' : undefined };
+        partialReason: partial && partialFirst ? 'The chat page did not request earlier messages.' : undefined,
+        sequenceGaps: partial ? sequenceGaps : undefined };
 
     },
     saveBot: async (output, { folder, saveAs }) => {
@@ -180,4 +182,12 @@ test('retrying one partial download retains the original result if the retry fai
   assert.equal(row().length, 3);
   assert.deepEqual(operations.filter(([action]) => action === 'collect').map(([,id]) => id),
     ['100000001', '100000002', '100000003', '100000001', '100000001']);
+});
+
+test('a partial Tipsy row shows the missing sequence range even without a request error', async () => {
+  const { node } = queueFixture({ sequenceGaps: [['2', '5'], ['9007199254740993', '9007199254740995']] });
+  await until(() => node('summary').textContent === 'Saved: 2 · Failed: 1 · Skipped: 0');
+  const [, status, detail] = node('queue').children[0].children;
+  assert.equal(status.textContent, 'Saved · Partial');
+  assert.match(detail.textContent, /Tipsy did not return message sequences 3–4, 9007199254740994\./);
 });
