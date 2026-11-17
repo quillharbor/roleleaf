@@ -9,7 +9,7 @@ Keep a local copy of your AI characters and conversations from Tipsy and Charact
 | Platform | Requirements | Install |
 | --- | --- | --- |
 | Android | Android 8+ | Download the Demo APK, allow installation from your browser when prompted, then open RoleLeaf |
-| Chrome extension | Desktop Chrome 111+ | Extract the ZIP, open `chrome://extensions`, enable Developer mode and load the `tipsy-exporter` folder |
+| Chrome extension | Desktop Chrome 111+ | Extract the ZIP, open `chrome://extensions`, enable Developer mode and load the `exporter` folder |
 
 [Download the Android and Chrome demos](https://quillharbor.github.io/roleleaf-demo/). Publication and validation details are recorded in `docs/releases/demo.json`. See the [installation guide](docs/installation.md), [privacy notes](PRIVACY.md) and [validation record](tests/VALIDATION.md). The demo distribution includes only Android and Chrome. macOS remains internal and has no visitor-facing download.
 

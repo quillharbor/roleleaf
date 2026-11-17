@@ -16,18 +16,18 @@ The device still requires installation confirmation. A QR code cannot bypass sys
 
 1. Download the Chrome ZIP and **extract it** to a permanent folder such as Documents/RoleLeaf. Do not select the ZIP itself.
 2. Paste `chrome://extensions` in Chrome's address bar and turn on **Developer mode** at the top right.
-3. Choose **Load unpacked** and select the extracted **tipsy-exporter** folder containing `manifest.json`. Confirm that the version on the RoleLeaf card matches the ZIP you downloaded, then pin RoleLeaf from the puzzle-piece Extensions menu.
+3. Choose **Load unpacked** and select the extracted **exporter** folder containing `manifest.json`. Confirm that the version on the RoleLeaf card matches the ZIP you downloaded, then pin RoleLeaf from the puzzle-piece Extensions menu.
 4. Open or refresh Tipsy or Character.AI, sign in, then click RoleLeaf. Keep the source and export tabs open until export completes.
 
 Chrome for Android does not support this desktop extension; use the Android demo instead. An administrator-managed browser may prohibit Developer mode.
 
 ### Update the local extension
 
-Extract the new ZIP and copy its contents into the same `tipsy-exporter` folder that Chrome loaded. At `chrome://extensions`, click **Reload** on the RoleLeaf card and confirm that the displayed version matches the new ZIP. Then refresh your Tipsy or Character.AI tab. The reload button reads files from the original folder. Keep that folder in its original location.
+Extract the new ZIP and copy its contents into the same `exporter` folder that Chrome loaded. At `chrome://extensions`, click **Reload** on the RoleLeaf card and confirm that the displayed version matches the new ZIP. Then refresh your Tipsy or Character.AI tab. The reload button reads files from the original folder. Keep that folder in its original location.
 
 ## Troubleshooting
 
-- “Manifest missing”: select the inner `tipsy-exporter` folder, not the ZIP or its outer folder.
+- “Manifest missing”: select the inner `exporter` folder, not the ZIP or its outer folder.
 - No characters: verify you are signed in to the correct source account. On Android, entering Recent or My Characters requests the list automatically; site failures or expired sessions can still prevent loading.
 - Partial export: in Chrome, Tipsy may save only the latest page when the site does not request earlier messages. You can retry the character from the batch results and check the coverage report in the ZIP for missing history.
 - Send only the platform, version and redacted error when reporting a problem. Never share credentials or private exports.

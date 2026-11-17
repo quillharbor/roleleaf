@@ -17,14 +17,14 @@
       "path": "dist/RoleLeaf-0.5.13.zip",
       "filename": "RoleLeaf-0.5.13.zip",
       "version": "0.5.13",
-      "bytes": 360102,
-      "sha256": "57f09625cddfb1395eb6837b2d0e39179f0935f187b7a5f092d61f636cfa04ad",
+      "bytes": 363883,
+      "sha256": "77128df0056cd56ee2769462641f4837c46f62f81e7940bb4f1d7656fa593e8c",
       "architecture": "architecture-independent Chrome extension",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
       "checks": [
-        "78 Node tests",
-        "ZIP CRC and bundled source"
+        "85 Node tests",
+        "exporter folder, ZIP CRC and bundled source"
       ]
     },
     {
@@ -41,7 +41,7 @@
       "status": "TEST-ONLY",
       "bundle_id": "io.github.quillharbor.roleleaf",
       "checks": [
-        "78 Node tests",
+        "85 Node tests",
         "DMG, ASAR, version, architecture and ad-hoc signature"
       ]
     },
@@ -61,14 +61,14 @@
       "status": "TEST-ONLY",
       "certificate_sha256": "8f0f8f29a450c64588e6f4a0e687aef1213a160f598d4cf214fbeaba06ad515e",
       "checks": [
-        "78 Node tests",
+        "85 Node tests",
         "assembleDebug, lintDebug, APK CRC, signature and bundled source"
       ]
     }
   ],
   "checks": [
-    "78 Node tests",
-    "ZIP CRC, bundled source, DMG and APK verification"
+    "85 Node tests",
+    "exporter package layout, ZIP CRC, bundled source, DMG and APK verification"
   ],
   "not_verified": [
     "Candidate packages have not been used with a live account.",

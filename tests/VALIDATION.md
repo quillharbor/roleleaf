@@ -34,3 +34,7 @@ Both Android builds passed 69 Node tests, assembly, lint, and signature verifica
 ## 0.5.13 Tipsy source gaps
 
 78 automated tests passed. Captured Tipsy responses spanning every missing sequence range produce a saved result with the gap notice and no retry button. Cursor jumps without evidence, capture errors and incomplete pagination remain partial. The ZIP report retains sequence gaps and marks full mainline coverage as false. The three packages were built and verified; live-account and clean-device acceptance for this revision are pending.
+
+## 0.5.13 Chrome package layout
+
+85 automated tests passed. The Chrome ZIP now always contains an `exporter/` entry with 29 runtime files and no `tipsy-exporter/` archive prefix. Documentation and localized install guides use the same folder name. The refreshed public Demo ZIP, GitHub Release asset and Pages checksum matched after publication.

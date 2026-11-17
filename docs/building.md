@@ -10,7 +10,7 @@ npm test
 npm run package
 ```
 
-The ZIP is written to `dist/`. Load `tipsy-exporter/` unpacked when developing.
+The ZIP is written to `dist/` with its contents under `exporter/`. Load `tipsy-exporter/` unpacked from the source tree when developing.
 
 ## macOS
 
