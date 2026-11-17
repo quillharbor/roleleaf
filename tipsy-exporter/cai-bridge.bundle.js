@@ -458,8 +458,22 @@ root.BotModel=Object.freeze({VERSION,CHANNEL,str,safe,route,clean,field,caiChara
     if (!text || text.length > 12 * 1024 * 1024) return null;
     try { return JSON.parse(text); } catch { return null; }
   }
+  function caiProfileURL() {
+    const props = nextData()?.props?.pageProps;
+    const username = [props?.user?.user?.username, props?.user?.username,
+      props?.currentUser?.username, props?.account?.username]
+      .find(value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,100}$/.test(value));
+    if (username) return C.origins.character_ai + '/profile/' + encodeURIComponent(username);
+    for (const a of document.querySelectorAll('a[href]')) {
+      const route = C.profile(a.href);
+      if (route?.platform !== platform || !/^\/profile\/[^/]+\/?$/.test(new URL(route.url).pathname)) continue;
+      const labels = [a.getAttribute('aria-label'), a.textContent].filter(Boolean);
+      if (labels.some(label => /^(?:my profile|profile|我的主页|个人资料|マイプロフィール|내 프로필|ملفي الشخصي)$/i.test(label.trim()))) return route.url;
+    }
+    return null;
+  }
   function ownProfileURL() {
-    if (platform === 'character_ai') return 'https://character.ai/profile';
+    if (platform === 'character_ai') return caiProfileURL();
     const footer = document.querySelector('[data-testid="nav.footer.containerView"]');
     for (const a of footer?.querySelectorAll('a[href]') ?? []) {
       const r = C.profile(a.href);

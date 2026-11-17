@@ -12,6 +12,7 @@ bindLanguageMenu($('language'), () => location.reload());
 const selected = new Set();
 const siteNames = { tipsy: 'Tipsy', character_ai: 'Character.AI' };
 let tab, platform, current, bots = [], reading = false, launching = false;
+let listLoaded = false;
 
 document.querySelector('.eyebrow').textContent = t('BOT EXPORTER') + ' · ' + chrome.runtime.getManifest().version;
 
@@ -97,6 +98,8 @@ function renderList() {
 async function readList(first = false) {
   if (reading || launching) return;
   reading = true;
+  listLoaded = false;
+  $('profile-note').hidden = true;
   $('status').textContent = t(creator ? 'Reading your created characters…' : 'Reading the chat sidebar…');
   $('refresh-list').disabled = true;
   $('chat-mode').disabled = $('creator-mode').disabled = true;
@@ -110,7 +113,8 @@ async function readList(first = false) {
     try {
       response = await chrome.tabs.sendMessage(tab.id, creator ? { type: 'BOT_CREATOR', action: 'list' } : { type: 'BOT_SIDEBAR' }, { frameId: 0 });
       if (creator) {
-        profileLink = (await chrome.tabs.sendMessage(tab.id, { type: 'BOT_CREATOR', action: 'profile' }, { frameId: 0 })).url;
+        const profile = await chrome.tabs.sendMessage(tab.id, { type: 'BOT_CREATOR', action: 'profile' }, { frameId: 0 });
+        profileLink = profile?.ok && typeof profile.url === 'string' ? profile.url : null;
         if (!response?.ok) throw Error('Open your own source profile, select Characters, then reopen RoleLeaf.');
       }
     } catch {
@@ -119,6 +123,7 @@ async function readList(first = false) {
     if (!response?.ok || response.platform !== platform || response.current?.id !== current?.id) {
       throw Error('The source page changed. Refresh the list.');
     }
+    listLoaded = true;
     bots = response.bots.filter(bot => {
       const route = targetRoute(bot.url, bot.id);
       return route?.platform === platform && route.id === bot.id && typeof bot.name === 'string';
@@ -145,6 +150,9 @@ async function readList(first = false) {
     $('refresh-list').disabled = false;
     $('chat-mode').disabled = $('creator-mode').disabled = false;
     $('open-profile').hidden = !creator || !profileLink;
+    const missingProfile = creator && listLoaded && !profileLink;
+    $('profile-note').hidden = !missingProfile;
+    $('profile-note').textContent = missingProfile ? t('Could not detect your profile automatically. Open it manually from the site account menu, select Characters, then reopen RoleLeaf.') : '';
     updateSelection();
   }
 }
@@ -207,6 +215,7 @@ $('collect').onclick = async () => {
 function setMode(value) {
   if (reading || launching || creator === value) return;
   creator = value;
+  $('profile-note').hidden = true;
   selected.clear(); bots = []; $('search').value = ''; renderList();
   $('chat-mode').setAttribute('aria-pressed', String(!creator));
   $('creator-mode').setAttribute('aria-pressed', String(creator));
