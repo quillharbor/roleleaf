@@ -3,7 +3,7 @@
   "version": "0.5.14",
   "date": "2026-11-18",
   "channel": "demo",
-  "status": "pages-updated-pending-readback",
+  "status": "published",
   "url": "https://quillharbor.github.io/roleleaf-demo/",
   "platforms": [
     "android",
@@ -72,7 +72,7 @@
   "qr_status": "published_and_verified",
   "deployment_source": "main:/docs",
   "release_note": "Chrome-only 0.5.14 update; no GitHub release created. Android remains 0.5.13-demo.29.",
-  "pages_commit": null,
-  "anonymous_download_verified": false,
-  "published_at": null
+  "pages_commit": "c6382f1e0cbb88f411df6a32bbf7d8fea62d8667",
+  "anonymous_download_verified": true,
+  "published_at": "2026-11-18T15:45:45+08:00"
 }
