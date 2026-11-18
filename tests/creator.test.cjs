@@ -22,7 +22,7 @@ test('creator targets are site- and identity-bound and distinct from chat URLs',
   }
 });
 
-test('Character.AI editor rejects nonowners and retains saved private settings only', () => {
+test('Character.AI creator export verifies ownership and retains saved settings and source ID', async () => {
   const detail = { external_id: caiId, user__username: 'owner', name: 'Private Bot', visibility: 'PRIVATE',
     description: '', definition: 'Private authored definition', additional_greetings: ['Another opening'],
     avatar_file_name: 'safe/photo.png', token: 'must-not-export', email: 'must-not-export',
@@ -43,6 +43,11 @@ test('Character.AI editor rejects nonowners and retains saved private settings o
   assert.deepEqual(model.card.data.alternate_greetings, ['Another opening']);
   assert.equal(model.assets[0].url, 'https://characterai.io/safe/photo.png');
   assert.doesNotMatch(JSON.stringify(model), /must-not-export|username/);
+
+  const built = await P.build({ model, conversations: [], scope: { actual: 'creator_character' },
+    assets: [], files: [], started: '2026-11-13' });
+  assert.equal(built.manifest.bot_id, caiId);
+  assert.equal(JSON.parse(built.files.find(file => file.path === 'character/character.json').data).id, caiId);
 });
 
 test('Tipsy packages use the original creator definition, contain no chats and preserve images independently', async () => {
@@ -63,12 +68,17 @@ test('Tipsy packages use the original creator definition, contain no chats and p
   assert.equal(built.report.character.status, 'partial');
   assert.equal(built.manifest.scope.actual, 'creator_character');
   assert.equal(built.manifest.is_creator, true);
+  assert.equal(built.manifest.bot_id, tipsyId);
+  assert.equal(JSON.parse(built.files.find(file => file.path === 'character/character.json').data).id, tipsyId);
   const ordinary = await P.build({ model, conversations: [], scope: { actual: 'current_conversation' },
     assets: [], files: [], started: '2026-11-16' });
   assert.match(built.manifest.match_id, /^[a-f0-9]{64}$/);
   assert.equal(built.manifest.match_id, ordinary.manifest.match_id);
+  assert.equal(ordinary.manifest.bot_id, undefined);
   assert.equal(built.manifest.character_id, undefined);
-  for (const file of built.files) assert.ok(!file.data.includes(tipsyId), file.path);
+  for (const file of built.files.filter(file => !['manifest.json', 'character/character.json'].includes(file.path))) {
+    assert.ok(!file.data.includes(tipsyId), file.path);
+  }
   assert.deepEqual(model.fields.linked_characters.value,
     [{ name: 'Self' }, { character_id: '1000000000799', name: 'Linked' }]);
   assert.ok(!built.files.some(item => item.path.startsWith('conversations/')));

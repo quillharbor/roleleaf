@@ -38,3 +38,7 @@ Both Android builds passed 69 Node tests, assembly, lint, and signature verifica
 ## 0.5.13 Chrome package layout
 
 85 automated tests passed. The Chrome ZIP now always contains an `exporter/` entry with 29 runtime files and no `tipsy-exporter/` archive prefix. Documentation and localized install guides use the same folder name. The refreshed public Demo ZIP, GitHub Release asset and Pages checksum matched after publication.
+
+## 0.5.14 creator source IDs
+
+85 automated tests passed. Synthetic Character.AI and Tipsy creator exports now contain the same non-empty source ID in `manifest.json` `bot_id` and `character/character.json` `id`; ordinary conversation packages retain their existing name-only character file and `match_id` matching. The Chrome ZIP contains 29 files under `exporter/`, passes CRC and identity scans, and was verified from its packaged runtime. The macOS and Android builds were not rebuilt because the required signing identity and Android toolchain were unavailable. Live-account import remains pending.

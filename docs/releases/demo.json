@@ -1,9 +1,9 @@
 {
   "product": "RoleLeaf",
-  "version": "0.5.13",
-  "date": "2026-11-16",
+  "version": "0.5.14",
+  "date": "2026-11-18",
   "channel": "demo",
-  "status": "published",
+  "status": "pages-updated-pending-readback",
   "url": "https://quillharbor.github.io/roleleaf-demo/",
   "platforms": [
     "android",
@@ -43,16 +43,16 @@
     },
     {
       "platform": "chrome",
-      "version": "0.5.13",
-      "path": "dist/RoleLeaf-0.5.13.zip",
-      "filename": "RoleLeaf-0.5.13.zip",
-      "bytes": 360102,
-      "sha256": "57f09625cddfb1395eb6837b2d0e39179f0935f187b7a5f092d61f636cfa04ad",
+      "version": "0.5.14",
+      "path": "dist/RoleLeaf-0.5.14.zip",
+      "filename": "RoleLeaf-0.5.14.zip",
+      "bytes": 363923,
+      "sha256": "b32e2ef007778551fdacb0759aad04eaf9f90ac22d192f2572a33347719479b2",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
       "checks": [
-        "78 Node tests",
-        "CRC and bundled assets"
+        "85 Node tests",
+        "creator source IDs, CRC and bundled assets"
       ]
     }
   ],
@@ -61,38 +61,18 @@
   "hosting": "github-pages-branch",
   "publication_authorized": true,
   "checks": [
-    "78 Node tests",
-    "Both archives and bundled source checked",
-    "Existing fixed Android signing certificate and package identity verified"
+    "85 Node tests",
+    "Chrome archive and bundled source checked",
+    "Existing fixed Android package retained unchanged"
   ],
   "not_verified": [
-    "Original Tipsy conversation has not been retested on the live service."
+    "Original Tipsy conversation has not been retested on the live service.",
+    "The Android package was not rebuilt for 0.5.14 because the fixed demo signing key is unavailable."
   ],
   "qr_status": "published_and_verified",
   "deployment_source": "main:/docs",
-  "release_id": 447020968,
-  "release_url": "https://github.com/quillharbor/roleleaf-demo/releases/tag/v0.5.13-demo",
-  "pages_commit": "f372b872619ad890dca997b15dfcefbf96f3037d",
-  "anonymous_download_verified": true,
-  "published_at": "2026-11-16T20:38:29+08:00",
-  "assets_verified": [
-    {
-      "name": "RoleLeaf-0.5.13.zip",
-      "bytes": 360102,
-      "sha256": "sha256:57f09625cddfb1395eb6837b2d0e39179f0935f187b7a5f092d61f636cfa04ad",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.13-demo/RoleLeaf-0.5.13.zip"
-    },
-    {
-      "name": "RoleLeaf-DEMO-0.5.13-demo.29.apk",
-      "bytes": 4403660,
-      "sha256": "sha256:bd82ed0f24f0653aaae3f2f9ba27d03bf4445b0d43c8f4663d490225041bb2a4",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.13-demo/RoleLeaf-DEMO-0.5.13-demo.29.apk"
-    },
-    {
-      "name": "SHA256SUMS",
-      "bytes": 185,
-      "sha256": "sha256:06270fe608c83677c1d5024bb0095dd1ecc3d501136c13fcf986f49b0487a755",
-      "url": "https://github.com/quillharbor/roleleaf-demo/releases/download/v0.5.13-demo/SHA256SUMS"
-    }
-  ]
+  "release_note": "Chrome-only 0.5.14 update; no GitHub release created. Android remains 0.5.13-demo.29.",
+  "pages_commit": null,
+  "anonymous_download_verified": false,
+  "published_at": null
 }

@@ -54,7 +54,7 @@ async function build({model,conversations,scope,assets,files:assetFiles,cardPNG,
  }
  const report={schema:'bot_package_report_v1',character:{status:creator?(missing.length?'partial':'captured_fields'):'name_only',missing},images:{status:assets.some(a=>a.status!=='saved')?'partial':assets.length?'complete':'not_found',assets},chats:{status:chatStatus,scope,conversations:conversations.map(c=>({id:c.id,...c.completeness})),all_regeneration_variants_verified:false},stopped,warnings:creator?[...model.warnings,...warnings]:[...warnings]};
  if (creator) {
-  const { id, card, source, ...character } = model;
+  const { card, source, ...character } = model;
   put('character/character.json', { ...character, assets });
   put('character/card.json', card);
   put('provenance/source.json', source);
@@ -71,7 +71,9 @@ async function build({model,conversations,scope,assets,files:assetFiles,cardPNG,
   .map(([key, field]) => `<details><summary>${escape(key)} · ${escape(field.status)}</summary><pre>${escape(typeof field.value==='string'?field.value:json(field.value))}</pre></details>`).join('') : '';
  put('README.html',`<!doctype html><html lang="en"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' file:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>${escape(model.name)} · RoleLeaf export</title><style>body{max-width:960px;margin:40px auto;padding:0 24px;background:#141621;color:#e6e8f2;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:#202331;padding:16px;border-radius:12px}img{max-width:240px;max-height:300px}figure{display:inline-block;margin:8px}summary{cursor:pointer;padding:14px;background:#292b42;margin:12px 0}small{color:#aeb3cf}article{border-bottom:1px solid #363b50;padding:16px 0}</style><h1>${escape(model.name)}</h1><p>${escape(model.platform)}</p><p>${creator?'Creator backup from the source editor. Chats are outside this export.':'Covers the current chat. Other chats and archives are unverified.'}${stopped?' Export stopped. Available data was saved.':''}</p><p>Character: ${escape(report.character.status)} · Images: ${escape(report.images.status)} · Chat: ${escape(report.chats.status)}</p><h2>Coverage and missing content</h2><ul>${[...missing.map(x=>x.field+': '+x.status),...report.warnings].map(x=>'<li>'+escape(x)+'</li>').join('')}</ul>${characterHTML}<h2>Images</h2>${imgHTML}${creator?'':'<h2>Chat</h2>'+chatHTML}</html>`);
  const index=[];for(const file of files)index.push({path:file.path,bytes:bytes(file.data).length,sha256:await sha(file.data)});
- const manifest={schema:'bot_package_v1',exporter_version:M.VERSION,platform:model.platform,match_id:matchId,is_creator:creator,name:model.name,started_at:started,finished_at:new Date().toISOString(),scope,complete:creator ? report.character.status==='captured_fields'&&report.images.status==='complete' : !stopped&&report.images.status!=='partial'&&report.chats.status==='captured_mainlines_complete'&&scope.conversation_list_complete===true,files:index,index_excludes:['manifest.json'],report:'provenance/report.json'};put('manifest.json',manifest);
+ const manifest={schema:'bot_package_v1',exporter_version:M.VERSION,platform:model.platform,match_id:matchId,is_creator:creator,name:model.name,started_at:started,finished_at:new Date().toISOString(),scope,complete:creator ? report.character.status==='captured_fields'&&report.images.status==='complete' : !stopped&&report.images.status!=='partial'&&report.chats.status==='captured_mainlines_complete'&&scope.conversation_list_complete===true,files:index,index_excludes:['manifest.json'],report:'provenance/report.json'};
+ if (creator) manifest.bot_id = model.id;
+ put('manifest.json',manifest);
  return {files,manifest,report,bytes:zip(files)};
 }
 root.BotPackage=Object.freeze({zip,sha,build,downloadImage,mediaURL,imageType,pathOK});
