@@ -5,6 +5,9 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { attachSiteBrowser } = require('./site-browser.cjs');
+require('../tipsy-exporter/core.js');
+require('../tipsy-exporter/png.js');
+require('../tipsy-exporter/bot-model.js');
 require('../tipsy-exporter/bot-package.js');
 
 const page = path.join(__dirname, 'index.html');

@@ -59,7 +59,7 @@ function setup({ differentConversation = false, missingLatest = false, switchedA
     },
     BotPackage: { build: async data => {
       packages.push(data);
-      return { bytes: new Uint8Array(), report: { character: {}, images: {}, chats: { status: 'captured_mainlines_complete' } } };
+      return { bytes: new Uint8Array(), report: { character: {}, images: { assets: [] }, chats: { status: 'captured_mainlines_complete' } } };
     } },
     recordSaved: output => saved.push(output),
   });

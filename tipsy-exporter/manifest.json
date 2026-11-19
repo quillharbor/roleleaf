@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RoleLeaf",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "description": "Export character cards, images, and current chats from Tipsy or Character.AI. Each character gets a ZIP.",
   "minimum_chrome_version": "111",
   "permissions": [
@@ -11,7 +11,8 @@
   ],
   "host_permissions": [
     "https://img.tipsy.chat/*",
-    "https://characterai.io/*"
+    "https://characterai.io/*",
+    "https://chat-attachments-prod.a4a46ba0803ca197cf9724979695aaf8.r2.cloudflarestorage.com/*"
   ],
   "action": {
     "default_title": "Export with RoleLeaf",

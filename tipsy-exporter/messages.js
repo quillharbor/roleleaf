@@ -61,6 +61,8 @@ RoleLeafI18n.register([
   ["Skipped", "تم التخطي", "スキップ済み", "건너뜀", "已略過"],
   ["Images: {saved} of {total} · Messages: {messages}", "الصور: {saved} من {total} · الرسائل: {messages}", "画像：{saved}/{total} · メッセージ：{messages}", "이미지 {saved}/{total} · 메시지 {messages}개", "圖片：{saved}/{total} · 訊息：{messages} 則"],
   ["Images: {saved} of {total} · Creator settings", "الصور: {saved} من {total} · إعدادات الشخصية", "画像：{saved}/{total} · キャラクター設定", "이미지 {saved}/{total} · 캐릭터 설정", "圖片：{saved}/{total} · 角色設定"],
+  ["{count} image(s) could not be downloaded and were skipped. Check the ZIP report for the failed URL.", "تعذر تنزيل {count} صورة وتم تخطيها. راجع تقرير ZIP لمعرفة الرابط الفاشل.", "{count} 件の画像をダウンロードできなかったためスキップしました。失敗した URL は ZIP のレポートを確認してください。", "{count}개의 이미지를 다운로드하지 못해 건너뛰었습니다. 실패한 URL은 ZIP 보고서에서 확인하세요.", "有 {count} 張圖片下載失敗，已略過。失敗的網址請見 ZIP 報告。"],
+  ["{count} image(s) failed", "فشل تنزيل {count} صورة", "画像 {count} 件が失敗", "이미지 {count}개 실패", "{count} 張圖片失敗"],
   ["Chats: {count}", "المحادثات: {count}", "チャット：{count}", "대화 {count}개", "對話：{count} 個"],
   ["See the export report for coverage and missing content.", "راجع تقرير التصدير لمعرفة ما تم تضمينه وما هو مفقود.", "エクスポート範囲と不足している内容はレポートをご確認ください。", "포함 범위와 누락된 내용은 내보내기 보고서를 확인하세요.", "請參閱匯出報告，瞭解涵蓋範圍和缺漏內容。"],
   ["The source chat changed. Select the character again.", "تغيّرت المحادثة المصدر. اختر الشخصية مجددًا.", "元のチャットが変わりました。キャラクターを選び直してください。", "원본 대화가 변경되었습니다. 캐릭터를 다시 선택하세요.", "來源對話已變更。請重新選取角色。"],

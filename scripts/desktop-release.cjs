@@ -63,7 +63,8 @@ function notarizeDmg(dmg, env, execute = run) {
 function validateArchiveEntries(entries) {
   const required = ['package.json', 'desktop/main.cjs', 'desktop/site-preload.cjs', 'desktop/index.html',
     'tipsy-exporter/page.bundle.js', 'tipsy-exporter/bridge.bundle.js',
-    'tipsy-exporter/cai-page.bundle.js', 'tipsy-exporter/cai-bridge.bundle.js'];
+    'tipsy-exporter/cai-page.bundle.js', 'tipsy-exporter/cai-bridge.bundle.js',
+    'tipsy-exporter/image-ref.js', 'tipsy-exporter/image-ref-config.js'];
   const files = entries.map(name => name.replace(/^\//, ''));
   for (const file of required) if (!files.includes(file)) throw Error(`安装包缺少运行文件：${file}`);
   for (const file of files) {

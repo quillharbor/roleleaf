@@ -7,6 +7,14 @@ const record = JSON.parse(fs.readFileSync(path.join(root, 'docs/releases/demo.js
 const output = path.join(root, 'dist/demo-site');
 const source = path.join(root, 'site');
 if (record.artifacts.length !== 2 || [...record.artifacts.map(x => x.platform)].sort().join(',') !== 'android,chrome') throw Error('Demo must contain exactly Android and Chrome.');
+const release = require('../package.json').version;
+const chrome = record.artifacts.find(artifact => artifact.platform === 'chrome');
+const android = record.artifacts.find(artifact => artifact.platform === 'android');
+const androidVersion = /^(\d+\.\d+\.\d+)-demo\.([1-9]\d*)$/.exec(android.version);
+if (record.version !== release || chrome.version !== release ||
+    !androidVersion || (!record.android_retained && androidVersion[1] !== release)) {
+  throw Error(`Demo ${release} requires Chrome ${release} and either an Android ${release}-demo.N APK or an explicit android_retained record.`);
+}
 // Validate all inputs before replacing the previous generated bundle.
 for (const artifact of record.artifacts) {
   if (path.basename(artifact.filename) !== artifact.filename) throw Error('Invalid artifact filename');

@@ -25,5 +25,140 @@ function normalize(r,entry){
 }
 function tipsyMessages(data){return {schema:'bot_messages_v1',id:data.source.conversation_id||'current',scope:'current_conversation',completeness:data.completeness,messages:data.records.map(m=>({id:m.sequence,role:m.sender_type,content:m.content,content_type:m.content_type,timestamp:m.timestamp??null,candidates:[],selected_candidate_id:null,source:clean(m)})),source_pages:data.pages};}
 function transcript(c){return ['Current chat thread. See report.json for missing content and reply candidate coverage.',...c.messages.map(m=>`[${m.id}] ${m.role} | ${m.timestamp??'Unknown'}\n${m.content_type==='text'?(m.content??'[Selected reply unknown. See the JSON.]'):'[Non-text event. See the JSON.]'}`)].join('\n\n');}
-root.BotModel=Object.freeze({VERSION,CHANNEL,str,safe,route,clean,field,caiCharacter,normalize,tipsyMessages,transcript});
+function imageHost(host){return host==='characterai.io'||host==='img.tipsy.chat'||host==='chat-attachments-prod.a4a46ba0803ca197cf9724979695aaf8.r2.cloudflarestorage.com';}
+function imageURL(value, includeUnsupported = false, platform = 'character_ai', rewrite = true){
+ if(typeof value!=='string')return '';
+ let text=value.trim().replace(/^<|>$/g,'');
+ if(!text||/^data:/i.test(text))return '';
+ if(text.startsWith('//'))text='https:'+text;
+ else if(!/^[a-z][a-z0-9+.-]*:/i.test(text)){
+  if(platform!=='character_ai')return '';
+  const path=text.replace(/^\/+/, '');
+  text='https://characterai.io/'+(/^static\//i.test(path)?'i/400/':'')+path;
+ }
+ try{
+  const u=new URL(text);
+  if(u.username||u.password||!['http:','https:'].includes(u.protocol))return '';
+  if(!includeUnsupported&&(u.protocol!=='https:'||u.port||!imageHost(u.hostname)))return '';
+  if(rewrite&&u.hostname==='characterai.io'&&u.pathname.startsWith('/uploaded/')){
+   u.pathname='/i/400/static/user/uploaded/'+u.pathname.slice('/uploaded/'.length);
+  }else if(rewrite&&u.hostname==='characterai.io'&&u.pathname.startsWith('/avatars/uploaded/')){
+   u.pathname='/i/400/static'+u.pathname;
+  }
+  return u.href;
+ }catch{return '';}
+}
+const webLink=/(?:https?:)?\/\/[^\s<>"'`)]+/gi;
+const imageField=/^(?:images?|image_?(?:url|uri|path|rel_?path)|tti_?image_?rel_?path|photos?)$/i;
+const attachmentField=/^(?:attachments?|media)$/i;
+const imageLocation=/^(?:url|src|file|path)$/i;
+const signedParameter=/^(?:x-amz-|x-goog-|signature$|token$|expires$|policy$|key-pair-id$)/i;
+const imageExtension=/\.(?:jpe?g|png|gif|webp|avif|svg|bmp|heic)(?:[?#]|$)/i;
+function mediaIdentity(link){
+ const normalized=imageURL(link,true);
+ if(!normalized)return link;
+ const url=new URL(normalized);
+ for(const key of [...url.searchParams.keys()]){
+  if(signedParameter.test(key))url.searchParams.delete(key);
+ }
+ return url.href;
+}
+function mediaFingerprint(value){
+ function normalize(item, context = ''){
+  if(typeof item==='string')return context==='image'||context==='attachment'&&imageExtension.test(item)?mediaIdentity(item):
+   chatImageMarkup(item,(url,_,markup,original)=>markup.replace(original,mediaIdentity(url)));
+  if(Array.isArray(item))return item.map(entry=>normalize(entry,context));
+  if(!item||typeof item!=='object')return item;
+  const isImage=!nonImageAttachment(item)&&(context==='image'||isImageAttachment(item));
+  return Object.fromEntries(Object.entries(item).map(([key,entry])=>[
+   key,normalize(entry,imageField.test(key)||isImage&&imageLocation.test(key)?'image':
+    attachmentField.test(key)||context==='attachment'&&imageLocation.test(key)&&!nonImageAttachment(item)?'attachment':''),
+  ]));
+ }
+ return JSON.stringify(normalize(value));
+}
+function chatImageMarkup(text, handle){
+ return text.replace(/(`+)[\s\S]*?\1(?!`)|!\[([^\]]*)\]\(\s*(<[^>]+>|[^)\s]+)(?:\s+["'][^"']*["'])?\s*\)|<img\b[^>]*\ssrc\s*=\s*["']([^"']+)["'][^>]*>/gi,
+  (markup,code,label,markdownURL,htmlURL)=>code?markup:handle(markdownURL??htmlURL.replace(/&amp;/gi,'&'),
+   label??markup.match(/\salt\s*=\s*(?:"([^"]*)"|'([^']*)')/i)?.slice(1).find(value=>value!==undefined),
+   markup,markdownURL??htmlURL));
+}
+function signedImageURL(value){
+ try{
+  const url=new URL(value.replace(/^<|>$/g,''),'https://characterai.io');
+  return [...url.searchParams.keys()].some(key=>signedParameter.test(key));
+ }catch{return false;}
+}
+function textWithoutImageURLs(text, signedOnly=false){
+ return chatImageMarkup(text, (url,label,markup)=>signedOnly&&!signedImageURL(url)?markup:label || '[Image attachment]').replace(webLink, link=>{
+  try{
+   const url=new URL(link.startsWith('//')?'https:'+link:link);
+   return imageExtension.test(url.pathname)&&signedImageURL(link)?'[Image attachment]':link;
+  }catch{return link;}
+ });
+}
+function isImageAttachment(value){
+ const type=value?.type, mime=value?.mime??value?.content_type;
+ return typeof mime==='string'&&/^image\//i.test(mime)||
+  typeof type==='string'&&/image|photo/i.test(type);
+}
+function nonImageAttachment(value){
+ const type=value?.type, mime=value?.mime??value?.content_type;
+ if(typeof mime==='string'&&/^[\w.+-]+\/[\w.+-]+$/.test(mime))return !/^image\//i.test(mime);
+ return typeof type==='string'&&!!type&&!/image|photo/i.test(type);
+}
+function imageValues(value,out,platform,depth=0,explicit=true){
+ if(depth>8||value==null)return;
+ if(typeof value==='string'){
+  const url=(explicit||imageExtension.test(value))&&imageURL(value,true,platform,false);
+  if(url)out.push(url);
+  return;
+ }
+ if(Array.isArray(value)){for(const item of value)imageValues(item,out,platform,depth+1,explicit);return;}
+ if(typeof value!=='object')return;
+ if(nonImageAttachment(value))return;
+ for(const[key,item]of Object.entries(value)){
+  if(/^(?:avatar|avatar_url|pfp|profile|profile_image|icon|emoji)$/i.test(key))continue;
+  if(imageLocation.test(key)||imageField.test(key)||attachmentField.test(key)){
+   imageValues(item,out,platform,depth+1,imageField.test(key)||isImageAttachment(value)||explicit);
+  }
+ }
+}
+function containsImage(value,platform='character_ai'){
+ if(isImageAttachment(value)&&!nonImageAttachment(value))return true;
+ const urls=[];
+ imageValues(value,urls,platform,0,false);
+ return urls.length>0;
+}
+function chatImageURLs(message,platform='character_ai'){
+ const urls=new Map();
+ const add=url=>{if(url)urls.set(mediaIdentity(url),url);};
+ for(const text of [message?.content,...(message?.candidates??[]).map(candidate=>candidate?.raw_content)]){
+  if(typeof text!=='string')continue;
+  chatImageMarkup(text,(value,_,markup)=>{add(imageURL(value,true,platform,false));return markup;});
+ }
+ const values=[];
+ for(const source of [message?.source,...(message?.candidates??[])]){
+  if(!source||typeof source!=='object')continue;
+  for(const key of ['image_url','image_uri','image_rel_path','tti_image_rel_path','attachment','attachments','image','images','photo','photos','media']){
+   if(Object.hasOwn(source,key))imageValues(source[key],values,platform,0,!attachmentField.test(key));
+  }
+ }
+ for(const url of values)add(url);
+ return [...urls.values()];
+}
+function addChatImages(model,conversations){
+ for(const conversation of conversations){
+  for(const message of conversation.messages){
+   for(const url of chatImageURLs(message,model.platform)){
+    const fallback=imageURL(url,false,model.platform);
+    model.assets.push({
+     role:'message_image',url,conversation_id:conversation.id,message_id:message.id,
+     ...(fallback&&fallback!==url?{fallback_url:fallback}:{}),
+    });
+   }
+  }
+ }
+}
+root.BotModel=Object.freeze({VERSION,CHANNEL,str,safe,route,clean,field,caiCharacter,normalize,tipsyMessages,transcript,imageHost,imageURL,mediaFingerprint,textWithoutImageURLs,containsImage,chatImageURLs,addChatImages});
 })(globalThis);

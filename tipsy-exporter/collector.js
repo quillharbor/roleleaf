@@ -49,7 +49,7 @@ function describeSequenceGaps(gaps) {
   return t('Tipsy did not return message sequences {sequences}.', { sequences });
 }
 
-async function collectSelectedBot({ route, url, current, progress, onCharacter }) {
+async function collectSelectedBot({ route, url, current, selectedName, progress, onCharacter }) {
   let expectedConversationId = null;
   if (current && route.platform === 'tipsy') {
     // The source page observes initial history, but subsequent streamed replies
@@ -68,18 +68,17 @@ async function collectSelectedBot({ route, url, current, progress, onCharacter }
   const tipsy = route.platform === 'tipsy';
   const worker = tipsy || !current;
   if (worker) {
-    const queueTab = tipsy ? await chrome.tabs.getCurrent() : null;
+    const queueTab = await chrome.tabs.getCurrent();
     controller.signal.throwIfAborted();
     progress(t('Reloading chat history to get the latest messages…'));
-    // Tipsy's history loader relies on scroll events that a hidden Chrome tab
-    // can suppress. Let the worker render in the foreground from the first load.
-    const tab = await chrome.tabs.create({ url, active: tipsy, ...(queueTab && { windowId: queueTab.windowId }) });
+    // History loading and pagination can depend on the chat being visible.
+    const tab = await chrome.tabs.create({ url, active: true, ...(queueTab && { windowId: queueTab.windowId }) });
     workerTab = tab.id;
     queueTabToRestore = queueTab?.id;
     controller.signal.throwIfAborted();
   }
   const output = await collectBot({
-    tabId: worker ? workerTab : sourceTab, route, worker, expectedConversationId,
+    tabId: worker ? workerTab : sourceTab, route, worker, expectedConversationId, selectedName,
     signal: controller.signal, progress, onCharacter,
   });
   if (current && route.platform === 'tipsy') {
@@ -105,6 +104,9 @@ async function runSingle() {
     });
     $('summary').textContent =
       counts(output) + ' · ' + t('Chats: {count}', { count: output.conversations }) + '\n' + t('See the export report for coverage and missing content.');
+    if (output.imageFailures) {
+      $('summary').textContent += '\n' + t('{count} image(s) could not be downloaded and were skipped. Check the ZIP report for the failed URL.', { count: output.imageFailures });
+    }
     $('stop').disabled = true;
     showProgress('Export ready. Choose where to save it.');
     await saveBot(output, { saveAs: true });
@@ -203,7 +205,7 @@ async function runBot(bot) {
       output = await collectCreator({ tabId: workerTab, route: bot.route, signal: controller.signal, progress });
     } else {
       output = await collectSelectedBot({
-        route: bot.route, url: bot.url, current: bot.id === job.currentId, progress,
+        route: bot.route, url: bot.url, current: bot.id === job.currentId, selectedName: bot.name, progress,
         onCharacter: name => { bot.name = name; },
       });
     }
@@ -212,6 +214,7 @@ async function runBot(bot) {
     await saveBot(output, { folder: job.folder, saveAs: false });
     bot.status = output.partial ? 'partial' : 'saved';
     bot.detail = job.creator ? t("Images: {saved} of {total} · Creator settings", { saved: output.images, total: output.imageCount }) : counts(output);
+    if (output.imageFailures) bot.detail += ' · ' + t('{count} image(s) failed', { count: output.imageFailures });
     if (output.partial && output.partialReason) bot.detail += ' · ' + t(output.partialReason);
     if (output.sequenceGaps?.length) bot.detail += ' · ' + describeSequenceGaps(output.sequenceGaps);
     bot.savedDetail = bot.detail;

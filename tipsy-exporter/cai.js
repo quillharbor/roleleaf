@@ -12,10 +12,14 @@ class History{
   const rows=new Map(this.rows);
   for(const t of p.turns){
    if(t?.turn_key?.chat_id!==this.id||typeof t.turn_key.turn_id!=='string'||!Array.isArray(t.candidates)||!t.author||!Number.isFinite(Date.parse(t.create_time)))throw Error('Invalid message identity or structure');
-   const candidates=t.candidates.map(c=>{if(typeof c.candidate_id!=='string'||typeof c.raw_content!=='string')throw Error('Unrecognized reply candidate structure');return M.clean(c);});
+   const candidates=t.candidates.map(c=>{if(typeof c.candidate_id!=='string'||!(typeof c.raw_content==='string'||c.raw_content==null))throw Error('Unrecognized reply candidate structure');return M.clean(c);});
    const selected=candidates.find(c=>c.candidate_id===t.primary_candidate_id);
-   const msg={id:t.turn_key.turn_id,role:t.author.is_human===true?'user':t.author.author_id===this.botId?'character':'unknown',content:selected?.raw_content??null,content_type:'text',timestamp:t.create_time,candidates,selected_candidate_id:t.primary_candidate_id??null,source:{state:t.state??null,last_update_time:t.last_update_time??null}};
-   const old=rows.get(msg.id);if(old&&JSON.stringify(old)!==JSON.stringify(msg))throw Error('Messages or selected replies changed during export');rows.set(msg.id,msg);
+   const source={state:t.state??null,last_update_time:t.last_update_time??null};
+   for(const key of ['attachment','attachments','image','image_url','image_uri','image_rel_path','tti_image_rel_path','media']){
+    if(Object.hasOwn(t,key))source[key]=M.clean(t[key]);
+   }
+   const msg={id:t.turn_key.turn_id,role:t.author.is_human===true?'user':t.author.author_id===this.botId?'character':'unknown',content:typeof selected?.raw_content==='string'?selected.raw_content:null,content_type:'text',timestamp:t.create_time,candidates,selected_candidate_id:t.primary_candidate_id??null,source};
+   const old=rows.get(msg.id);if(old&&M.mediaFingerprint(old)!==M.mediaFingerprint(msg))throw Error('Messages or selected replies changed during export');rows.set(msg.id,msg);
   }
   if(rows.size>10000||new TextEncoder().encode(JSON.stringify([...rows.values()])).length>32*1024*1024)throw Error('Export reached the 10,000 message or 32 MB limit');
   this.rows=rows;this.seen.add(cursor||'');this.latest=this.latest||!cursor;this.next=next;this.ended=!next;this.revision++;this.error='';this.pages.push({cursor:cursor||null,next_token:next,count:p.turns.length});

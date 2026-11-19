@@ -6,19 +6,38 @@ function sync(){const now=M.route(location.href);if(now?.id!==identity?.id){iden
 function status(){sync();return {character_id:identity?.id,conversation_id:history?.id||chatId,running,notice,...(history?.export().completeness||{records:0}),revision};}
 function failure(e){if(history)history.error=e.message;notice=e.message;running=false;job++;}
 function bind(cid){if(chatId&&chatId!==cid){history=null;job++;running=false;notice='The chat changed. Export again.';revision++;}chatId=cid;}
+function characterMedia(value){
+ try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&u.hostname==='characterai.io'?u.href:'';}catch{return '';}
+}
+function sourceAvatar(c){
+ const images=Array.from(document.querySelectorAll('img'));
+ if(typeof c.avatar_file_name==='string'&&c.avatar_file_name){
+  const direct=images.find(img=>(img.currentSrc||img.src||'').includes(c.avatar_file_name));
+  if(direct)return characterMedia(direct.currentSrc||direct.src);
+ }
+ if(typeof c.name!=='string'||!c.name.trim())return '';
+ const named=new Set(images.filter(img=>img.alt?.trim()===c.name.trim())
+  .map(img=>characterMedia(img.currentSrc||img.src)).filter(Boolean));
+ return named.size===1 ? named.values().next().value : '';
+}
 function receive(u,p,scope){sync();if(scope!==identity||!identity)return;
  if(u.pathname==='/character/v1/get_character_info'){
   const c=M.caiCharacter(p.character);if(c.external_id!==identity.id)return;
-  const avatar=Array.from(document.querySelectorAll('img')).find(x=>c.avatar_file_name&&x.src.includes(c.avatar_file_name));if(avatar)c.avatar_url=avatar.src;
+  if(!c.avatar_url){const avatar=sourceAvatar(c);if(avatar)c.avatar_url=avatar;}
   entry={character:c,capturedAt:new Date().toISOString()};revision++;return;
  }
  const match=u.pathname.match(/^\/turns\/([\w-]+)\/$/);if(match){
   const cid=match[1],cursor=u.searchParams.get('next_token')||'';
   if(!cursor){
    const snapshot=new C.History(identity.id,cid);snapshot.accept('',p);
-   snapshot.latestSignature=JSON.stringify([snapshot.next,snapshot.export().messages]);
+   snapshot.latestSignature=M.mediaFingerprint([snapshot.next,snapshot.export().messages]);
    // An unchanged latest refetch must not discard older pages or rewind next.
-   if(history?.id===cid&&history.latestSignature===snapshot.latestSignature)return;
+   if(history?.id===cid&&history.latestSignature===snapshot.latestSignature){
+    for(const [id,message] of snapshot.rows){
+     if(M.mediaFingerprint(history.rows.get(id))===M.mediaFingerprint(message))history.rows.set(id,message);
+    }
+    return;
+   }
    bind(cid);history=snapshot;running=false;job++;
   }else{
    if(!history||history.id!==cid)return;
@@ -65,7 +84,7 @@ async function collect(){
 }
 window.addEventListener('message',e=>{if(e.source!==window||e.origin!==location.origin)return;const m=e.data;if(m?.channel!==M.CHANNEL||m.type!=='CAI_COMMAND'||typeof m.requestId!=='string')return;sync();if(m.characterId!==identity?.id)return;
  if(m.action==='start')collect();else if(m.action==='cancel'){running=false;job++;notice='Export stopped. Saving the available data.';}else if(!['status','export'].includes(m.action))return;
- if(entry&&!entry.character.avatar_url){const c=entry.character,a=Array.from(document.querySelectorAll('img')).find(x=>c.avatar_file_name&&x.src.includes(c.avatar_file_name));if(a)c.avatar_url=a.src;}
+ if(entry&&!entry.character.avatar_url){const avatar=sourceAvatar(entry.character);if(avatar)entry.character.avatar_url=avatar;}
  const result={ok:true,status:status()};if(m.action==='export')Object.assign(result,{entry,conversations:history?[history.export()]:[],scope:{requested:'all_bot_conversations',actual:'current_conversation',conversation_list_complete:false,archived_checked:false},revision});
  window.postMessage({channel:M.CHANNEL,type:'CAI_RESULT',requestId:m.requestId,result},location.origin);
 });

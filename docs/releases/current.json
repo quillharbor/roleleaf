@@ -1,8 +1,8 @@
 {
   "product": "RoleLeaf",
-  "release": "0.5.14",
-  "status": "private-review",
-  "license": "pending; source remains private",
+  "release": "0.5.15",
+  "status": "local-review",
+  "license": "pending",
   "locales": [
     "en",
     "ar",
@@ -14,26 +14,25 @@
   "artifacts": [
     {
       "platform": "chrome",
-      "path": "dist/RoleLeaf-0.5.14.zip",
-      "filename": "RoleLeaf-0.5.14.zip",
-      "version": "0.5.14",
-      "bytes": 363923,
-      "sha256": "b32e2ef007778551fdacb0759aad04eaf9f90ac22d192f2572a33347719479b2",
+      "path": "dist/RoleLeaf-0.5.15.zip",
+      "filename": "RoleLeaf-0.5.15.zip",
+      "version": "0.5.15",
+      "bytes": 422413,
+      "sha256": "bfe9638f67b836dca7134cfb76ad9a116e328a04e71b9801619cd675fcd1c2b3",
       "architecture": "architecture-independent Chrome extension",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
       "checks": [
-        "85 Node tests",
-        "creator source IDs, exporter folder, ZIP CRC and bundled source"
+        "exporter folder, ZIP CRC, media host permissions and identity scan"
       ]
     },
     {
       "platform": "macos",
-      "path": "desktop/release/0.5.13-arm64-UzVpKY/RoleLeaf-TEST-ONLY-0.5.13-arm64.dmg",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.13-arm64.dmg",
-      "version": "0.5.13",
-      "bytes": 108800499,
-      "sha256": "33b280ffea6b8ab5e3bbbb00c7028813031167ed31c7a7026b319d5f2687aa8b",
+      "path": "desktop/release/0.5.15-arm64-qp9fV5/RoleLeaf-TEST-ONLY-0.5.15-arm64.dmg",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.15-arm64.dmg",
+      "version": "0.5.15",
+      "bytes": 108862236,
+      "sha256": "60d5ab3ad6140473616d94f375aa9d32ee97ed465e696a77cd61017be2318f12",
       "architecture": "arm64",
       "minimum": "macOS 13",
       "signing": "ad-hoc",
@@ -41,41 +40,42 @@
       "status": "TEST-ONLY",
       "bundle_id": "io.github.quillharbor.roleleaf",
       "checks": [
-        "85 Node tests",
-        "DMG, ASAR, version, architecture and ad-hoc signature"
+        "DMG, ASAR contents and identity scan, version, architecture and ad-hoc signature"
       ]
     },
     {
       "platform": "android",
-      "path": "android/release/0.5.13-demo.29/RoleLeaf-TEST-ONLY-0.5.13-demo.29.apk",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.13-demo.29.apk",
-      "version": "0.5.13-demo.29",
-      "bytes": 4930908,
-      "sha256": "53996c56f4f106f22a4d6135990a05f9dd1ef7f02be6e14de6e1d2a1536f641d",
-      "architecture": "architecture-independent Java/WebView",
-      "minimum": "Android 8+",
+      "path": "android/release/0.5.15-demo.31/RoleLeaf-DEMO-0.5.15-demo.31.apk",
+      "filename": "RoleLeaf-DEMO-0.5.15-demo.31.apk",
+      "version": "0.5.15-demo.31",
+      "version_code": 31,
+      "bytes": 4421627,
+      "sha256": "d8f7da085b945480334d2a8b86eaa1f3fa3f9c5cf72b49e713ae95905cc60308",
       "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 29,
-      "signing": "candidate debug key",
-      "debuggable": true,
-      "status": "TEST-ONLY",
-      "certificate_sha256": "8f0f8f29a450c64588e6f4a0e687aef1213a160f598d4cf214fbeaba06ad515e",
+      "minimum": "Android 8+",
+      "architecture": "architecture-independent Java/WebView",
+      "signing": "fixed demo release key",
+      "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f",
+      "status": "demo",
+      "debuggable": false,
       "checks": [
-        "85 Node tests",
-        "assembleDebug, lintDebug, APK CRC, signature and bundled source"
+        "assembleRelease and lintRelease",
+        "APK CRC, APK v2 signature, application ID, versionCode and fixed certificate"
       ]
     }
   ],
   "checks": [
-    "85 Node tests",
-    "Chrome ZIP creator IDs, exporter layout, CRC and bundled source",
-    "Existing 0.5.13 DMG and APK artifacts retained unchanged"
+    "111 Node tests including image fallback, ZIP size trimming, Tipsy creator editor navigation, and Character.AI chat export with verified history and missing character details",
+    "Synthetic creator, chat and missing-image packages share the same match_id and pass ZIP and SHA-256 checks",
+    "Synthetic-key JWE round trip and production public-key configuration"
   ],
   "not_verified": [
-    "Candidate packages have not been used with a live account.",
-    "Production macOS signing and notarization.",
-    "0.5.14 macOS and Android builds were not rebuilt because signing/toolchain inputs are unavailable."
+    "Fresh live-account exports and target importer acceptance using this candidate.",
+    "Server decryption with the deployed private key and missing-image placeholders.",
+    "Android fixed-signature upgrade has not been installed on a physical device.",
+    "Production macOS signing, notarization and clean-machine acceptance."
   ],
   "demo_url": "https://quillharbor.github.io/roleleaf-demo/",
-  "checksum_path": "dist/RoleLeaf-0.5.14-chrome/SHA256SUMS"
+  "checksum_path": "dist/RoleLeaf-0.5.15-checks/SHA256SUMS",
+  "publication": "Chrome and Android 0.5.15 demo update"
 }

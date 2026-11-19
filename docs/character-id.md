@@ -21,11 +21,15 @@
 | `character/card.json`、`character/card.png` | 无 | JSON 为 Character Card V2，PNG 卡片在成功生成时提供 |
 | `conversations/<序号>-<安全化会话ID>/messages.json` | 当前会话。以 JSON 内的 `id` 为会话 ID | 无 |
 | 同目录下的 `transcript.txt` | 可读版聊天记录 | 无 |
-| `assets/` | 已下载的聊天图片 | 已下载的角色素材 |
+| `assets/assets.json` | 聊天图片清单 | 角色素材清单 |
 | `provenance/source.json` | 无 | 创作编辑器返回的角色字段 |
 | `provenance/report.json` | 角色区为 `name_only`，同时记录会话与图片覆盖情况 | 聊天区为 `not_requested`，同时记录角色字段与图片覆盖情况 |
 
-按 `report.images.assets` 关联图片。只有 `status: "saved"` 的项目应从包内的 `path` 读取。同一图片可能被多个条目引用。失败或缺失项保留报告状态，导入时无需重新请求原始 URL。
+`assets/assets.json` 使用 `roleleaf_assets_v1`，新版包以这份清单为唯一图片来源。按每项的 `file` 读取 ZIP 内图片并核对 `sha256`。同一文件可能由多个角色用途或消息引用。文件去重可用 `sha256`，图片用途去重可用 `image_id`，聊天关联使用 `conversation_id` 和 `message_id`。
+
+成功保存的图片才进入清单。缺头像或封面时使用占位图，聊天图片缺失时可结合消息的 `image_attachment_count` 显示占位。`provenance/report.json` 用于排查失败原因。读取 ZIP 内图片无需解密 `ref`。只有需要来源信息时才由服务端解密，密文每次可能变化。
+
+创作者包的 Tipsy 关联角色可以带 `image_id`，用它在同一份清单查找 `reference` 图片。图片缺失时仍保留该关联角色的资料。图片超过 ZIP 容量限制时，导出器会优先保留角色和聊天内容，并在报告中记录省略的图片。
 
 ## 3. 保留聊天内容和覆盖状态
 
@@ -41,10 +45,11 @@
 
 Chrome、macOS 和 Android 使用同一算法。只要源平台和原始 Bot ID 一致，重复导出、角色改名、普通聊天与创作者模式都会得到相同的值。
 
-`match_id` 是 `JSON.stringify(["roleleaf-character-id-v1", platform, botId])` 经 UTF-8 编码后计算的 SHA-256 摘要。平台取值为 `tipsy` 或 `character_ai`，Bot ID 按源站字符串保留大小写和前导零，且不会作为角色身份字段写入新包。它只用于匹配，已知候选原始 ID 的一方可以计算摘要并比较。
+`match_id` 是 `JSON.stringify(["roleleaf-character-id-v1", platform, botId])` 经 UTF-8 编码后计算的 SHA-256 摘要。平台取值为 `tipsy` 或 `character_ai`，Bot ID 按源站字符串保留大小写和前导零。创作者包另有 `manifest.bot_id` 和 `character/character.json` 中的 `id`。两种包都可以直接使用 `match_id` 匹配。
 
 ## 5. 兼容旧包和解析失败
 
+- 缺少 `assets/assets.json` 的旧包，可从 `report.images.assets` 读取 `status` 为 `saved` 的条目，用 `path` 读取对应的本地文件。
 - 0.5.6 至 0.5.10 的旧包可包含 `manifest.character_id` 加密对象。若导入方以前已经解密并保存了摘要，可直接和新包的 `match_id` 比较。手中只有旧密文、又无需支持解密时，可从源平台重新导出取得 `match_id`。
 - 更早的包若有明文 `manifest.bot_id`，可结合 `manifest.platform` 按第 4 节计算相同的摘要。缺少 `is_creator` 时，以 `scope.actual === "creator_character"` 识别创作者导出。
 - 新包的 `match_id` 缺失或格式无效时，仍可在 ZIP 校验通过后预览内容，停用基于角色 ID 的自动合并。

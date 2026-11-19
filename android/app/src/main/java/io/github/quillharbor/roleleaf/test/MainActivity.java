@@ -44,7 +44,8 @@ public class MainActivity extends Activity {
     private static final String LOCAL = "https://appassets.androidplatform.net";
     private static final int SAVE_DOCUMENT = 51, OPEN_DOCUMENT = 52, PICK_ZIP_FOLDER = 53, CHUNK = 131072, ZIP_LIMIT = 129 * 1024 * 1024;
     private static final int AVATAR_LIMIT = 2 * 1024 * 1024;
-    private static final Set<String> MEDIA_HOSTS = set("img.tipsy.chat", "characterai.io");
+    private static final Set<String> MEDIA_HOSTS = set("img.tipsy.chat", "characterai.io",
+            "chat-attachments-prod.a4a46ba0803ca197cf9724979695aaf8.r2.cloudflarestorage.com");
     private static final Set<String> AVATAR_TYPES = set("image/png", "image/jpeg", "image/gif", "image/webp", "image/avif");
     private final LruCache<String, Avatar> avatars = new LruCache<String, Avatar>(8 * 1024 * 1024) {
         @Override protected int sizeOf(String key, Avatar value) { return value.bytes.length; }

@@ -93,6 +93,40 @@
     try { return decodeURIComponent(new URL(value, location.origin).pathname).replace(/![^/]*$/, ''); }
     catch { return ''; }
   };
+  // Character.AI may omit avatar_file_name while still rendering a fallback
+  // avatar in the editor. Capture the visible avatar for that character only.
+  function pageAvatar(name) {
+    if (typeof name !== 'string' || !name.trim()) return null;
+    const urls = new Set();
+    for (const input of document.querySelectorAll('input[type="file"][accept*="image"]')) {
+      const controls = [...(input.labels || []), input.closest('label, button')].filter(Boolean);
+      for (const control of controls) {
+        for (const img of control.querySelectorAll('img')) {
+          const url = C.media(img.currentSrc || img.src);
+          if (!url || img.alt?.trim() !== name.trim()) continue;
+          const avatarControl = /\bavatar\b|头像|頭像/i.test([
+            input.getAttribute?.('name'), control.getAttribute?.('aria-label'), control.getAttribute?.('data-testid'),
+          ].join(' '));
+          const defaultPortrait = /^\/pfp-fallbacks\/[^/]+$/i.test(new URL(url).pathname) &&
+            String(img.parentElement?.className).split(/\s+/).includes('rounded-full');
+          if (avatarControl || defaultPortrait) urls.add(url);
+        }
+      }
+    }
+    return urls.size === 1 ? urls.values().next().value : null;
+  }
+  function addVisibleAvatar(data, visible) {
+    if (!visible) return null;
+    let primary = data.assets.find(asset => asset.role === 'avatar');
+    if (!primary) {
+      primary = { role: 'avatar', url: visible };
+      data.assets.push(primary);
+    }
+    if (!data.assets.some(asset => asset.role === 'cover')) {
+      data.assets.push({ role: 'cover', url: visible });
+    }
+    return primary;
+  }
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   // Tipsy stores the loaded editor data during its own Edit action. Directly opening /update
   // would skip that load. Only activate the menu and its explicit edit icon on the matching card.
@@ -158,6 +192,13 @@
     if (platform === 'tipsy') { void tipsy('read', m.characterId).then(reply); return true; }
     const page = nextData();
     const data = C.caiEditor(page, m.characterId);
+    if (data) {
+      const visible = pageAvatar(data.name), primary = addVisibleAvatar(data, visible);
+      if (primary && visible && primary.url !== visible) {
+        if (primary.fallback_url) primary.visible_avatar_url = visible;
+        else primary.fallback_url = visible;
+      }
+    }
     reply(data ? { ok: true, data: { ...data, url: editor.url } } :
       notReady(page?.page === '/character/[id]/edit' ? 'forbidden' : 'waiting'));
   });

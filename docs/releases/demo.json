@@ -1,7 +1,7 @@
 {
   "product": "RoleLeaf",
-  "version": "0.5.14",
-  "date": "2026-11-18",
+  "version": "0.5.15",
+  "date": "2026-11-19",
   "channel": "demo",
   "status": "published",
   "url": "https://quillharbor.github.io/roleleaf-demo/",
@@ -22,37 +22,37 @@
   "artifacts": [
     {
       "platform": "android",
-      "version": "0.5.13-demo.29",
-      "path": "android/release/0.5.13-demo.29/RoleLeaf-DEMO-0.5.13-demo.29.apk",
-      "filename": "RoleLeaf-DEMO-0.5.13-demo.29.apk",
-      "bytes": 4403660,
-      "sha256": "bd82ed0f24f0653aaae3f2f9ba27d03bf4445b0d43c8f4663d490225041bb2a4",
+      "version": "0.5.15-demo.31",
+      "path": "android/release/0.5.15-demo.31/RoleLeaf-DEMO-0.5.15-demo.31.apk",
+      "filename": "RoleLeaf-DEMO-0.5.15-demo.31.apk",
+      "bytes": 4421627,
+      "sha256": "d8f7da085b945480334d2a8b86eaa1f3fa3f9c5cf72b49e713ae95905cc60308",
       "minimum": "Android 8+",
       "application_id": "io.github.quillharbor.roleleaf.demo",
-      "version_code": 29,
+      "version_code": 31,
       "signing": "fixed demo release key",
       "debuggable": false,
       "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f",
       "architecture": "architecture-independent Java/WebView",
       "channel": "demo",
       "checks": [
-        "78 Node tests",
+        "111 Node tests",
         "assembleRelease and lintRelease",
-        "APK CRC, bundled assets, and APK v2 signature"
+        "APK CRC, bundled assets, APK v2 signature and fixed certificate"
       ]
     },
     {
       "platform": "chrome",
-      "version": "0.5.14",
-      "path": "dist/RoleLeaf-0.5.14.zip",
-      "filename": "RoleLeaf-0.5.14.zip",
-      "bytes": 363923,
-      "sha256": "b32e2ef007778551fdacb0759aad04eaf9f90ac22d192f2572a33347719479b2",
+      "version": "0.5.15",
+      "path": "dist/RoleLeaf-0.5.15.zip",
+      "filename": "RoleLeaf-0.5.15.zip",
+      "bytes": 422413,
+      "sha256": "bfe9638f67b836dca7134cfb76ad9a116e328a04e71b9801619cd675fcd1c2b3",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
       "checks": [
-        "85 Node tests",
-        "creator source IDs, CRC and bundled assets"
+        "111 Node tests",
+        "exporter folder, CRC, image fallback and bundled assets"
       ]
     }
   ],
@@ -61,18 +61,17 @@
   "hosting": "github-pages-branch",
   "publication_authorized": true,
   "checks": [
-    "85 Node tests",
+    "111 Node tests",
     "Chrome archive and bundled source checked",
-    "Existing fixed Android package retained unchanged"
+    "Android fixed-signature package rebuilt for 0.5.15"
   ],
   "not_verified": [
     "Original Tipsy conversation has not been retested on the live service.",
-    "The Android package was not rebuilt for 0.5.14 because the fixed demo signing key is unavailable."
+    "Android fixed-signature upgrade has not been installed on a physical device."
   ],
   "qr_status": "published_and_verified",
   "deployment_source": "main:/docs",
-  "release_note": "Chrome-only 0.5.14 update; no GitHub release created. Android remains 0.5.13-demo.29.",
-  "pages_commit": "c6382f1e0cbb88f411df6a32bbf7d8fea62d8667",
+  "release_note": "Chrome and Android 0.5.15 update; no GitHub release created.",
   "anonymous_download_verified": true,
-  "published_at": "2026-11-18T15:45:45+08:00"
+  "published_at": "2026-11-19T21:15:00+08:00"
 }

@@ -2,6 +2,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { createRequire } = require('node:module');
+const { dirname } = require('node:path');
+const { runInNewContext } = require('node:vm');
 const { parseArgs, signingEnvironment, notarizeDmg, validateArchiveEntries } = require('../scripts/desktop-release.cjs');
 
 test('release entry rejects accidental test shortcuts and unknown arguments', () => {
@@ -48,10 +52,31 @@ test('accepted notarization must still pass staple and ticket validation', () =>
 test('packaged archive rejects nested old installers, dependencies and missing bridges', () => {
   const files = ['/package.json', '/desktop', '/desktop/main.cjs', '/desktop/site-preload.cjs', '/desktop/index.html',
     '/tipsy-exporter', '/tipsy-exporter/page.bundle.js', '/tipsy-exporter/bridge.bundle.js',
-    '/tipsy-exporter/cai-page.bundle.js', '/tipsy-exporter/cai-bridge.bundle.js'];
+    '/tipsy-exporter/cai-page.bundle.js', '/tipsy-exporter/cai-bridge.bundle.js',
+    '/tipsy-exporter/image-ref.js', '/tipsy-exporter/image-ref-config.js'];
   assert.doesNotThrow(() => validateArchiveEntries(files));
   for (const extra of ['/desktop/release-notarized/old.dmg', '/desktop/package-lock.json', '/node_modules/secret.txt', '/.env']) {
     assert.throws(() => validateArchiveEntries([...files, extra]), /非运行文件/);
   }
   assert.throws(() => validateArchiveEntries(files.filter(file => !file.endsWith('cai-bridge.bundle.js'))), /缺少运行文件/);
+});
+
+test('desktop main loads the media allowlist and validates PNG downloads', async context => {
+  const entry = require.resolve('../desktop/main.cjs');
+  const dependency = createRequire(entry);
+  const electron = {
+    app: { getPath: () => '/tmp', setPath() {}, whenReady: () => new Promise(() => {}), on() {} },
+    ipcMain: { handle() {}, on() {} },
+  };
+  runInNewContext(readFileSync(entry, 'utf8'), {
+    require: name => name === 'electron' ? electron : name === './site-browser.cjs' ? {} : dependency(name),
+    __dirname: dirname(entry), process: { argv: [] },
+  });
+  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg==', 'base64');
+  const fetcher = context.mock.method(globalThis, 'fetch', async () => new Response(pixel));
+  const allowed = await globalThis.BotPackage.downloadImage('https://characterai.io/avatar.png');
+  assert.equal(allowed.ext, 'png');
+  assert.deepEqual(Buffer.from(allowed.data), pixel);
+  await assert.rejects(globalThis.BotPackage.downloadImage('https://untrusted.example/avatar.png'), /not allowed/);
+  assert.equal(fetcher.mock.callCount(), 1);
 });
