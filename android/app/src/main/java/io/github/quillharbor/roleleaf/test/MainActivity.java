@@ -12,6 +12,7 @@ import android.provider.DocumentsContract;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.LruCache;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowManager;
@@ -42,7 +43,8 @@ import java.util.concurrent.*;
 /** Native capabilities are only exposed to the bundled UI, never to source/auth pages. */
 public class MainActivity extends Activity {
     private static final String LOCAL = "https://appassets.androidplatform.net";
-    private static final int SAVE_DOCUMENT = 51, OPEN_DOCUMENT = 52, PICK_ZIP_FOLDER = 53, CHUNK = 131072, ZIP_LIMIT = 129 * 1024 * 1024;
+    private static final int SAVE_DOCUMENT = 51, OPEN_DOCUMENT = 52, PICK_ZIP_FOLDER = 53, CHUNK = 512 * 1024, ZIP_LIMIT = 129 * 1024 * 1024;
+    private static final int BRIDGE_LIMIT = 900000;
     private static final int AVATAR_LIMIT = 2 * 1024 * 1024;
     private static final Set<String> MEDIA_HOSTS = set("img.tipsy.chat", "characterai.io",
             "chat-attachments-prod.a4a46ba0803ca197cf9724979695aaf8.r2.cloudflarestorage.com");
@@ -67,6 +69,7 @@ public class MainActivity extends Activity {
     private final Map<String, Capture> captures = new HashMap<>();
     private final Map<String, WebView> siteViews = new HashMap<>();
     private WebView panel, source, popup, worker;
+    private final List<WebView> popups = new ArrayList<>();
     private FrameLayout content;
     private LinearLayout browser;
     private LinearLayout platforms;
@@ -171,6 +174,9 @@ public class MainActivity extends Activity {
         if (android.os.Build.VERSION.SDK_INT >= 29) getWindow().setNavigationBarContrastEnforced(false);
         // Local test APK only. Release builds never expose WebView debugging.
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+        CookieManager cookies = CookieManager.getInstance();
+        cookies.setAcceptCookie(true);
+        cookies.flush();
         supported = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
                 && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT);
         if (!supported) {
@@ -252,6 +258,8 @@ public class MainActivity extends Activity {
         if (page != null && page.canGoBack()) { page.goBack(); return true; }
         if (popup == null) return false;
         closePopup();
+        // The provider window may finish the session without closing itself.
+        // The opener receives its credential through postMessage.
         return true;
     }
 
@@ -272,11 +280,17 @@ public class MainActivity extends Activity {
     }
 
     private void settings(WebView web) {
+        settings(web, false);
+    }
+    private void settings(WebView web, boolean thirdPartyCookies) {
         WebSettings s = web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
         s.setAllowFileAccess(false); s.setAllowContentAccess(false); s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         s.setMediaPlaybackRequiresUserGesture(true); s.setSupportMultipleWindows(true);
-        s.setJavaScriptCanOpenWindowsAutomatically(false); web.setBackgroundColor(Color.rgb(20,22,32));
-        CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
+        // OAuth buttons call window.open. onCreateWindow still rejects popups
+        // without a user gesture and the navigation allowlist remains active.
+        s.setJavaScriptCanOpenWindowsAutomatically(true); web.setBackgroundColor(Color.rgb(20,22,32));
+        CookieManager.getInstance().setAcceptThirdPartyCookies(web, thirdPartyCookies);
     }
     private WebView createPanel() {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) throw new IllegalStateException("Update Android System WebView");
@@ -302,7 +316,7 @@ public class MainActivity extends Activity {
         });
         WebViewCompat.addWebMessageListener(web,"NativeApp",set(LOCAL),(view,message,sourceOrigin,mainFrame,reply) -> {
             if (!mainFrame || !LOCAL.equals(sourceOrigin.toString()) || destroyed) return;
-            String raw = message.getData(); if (raw == null || raw.length() > 250000) return;
+            String raw = message.getData(); if (raw == null || raw.length() > BRIDGE_LIMIT) return;
             try { JSONObject req = new JSONObject(raw); dispatch(req.getString("id"),req.getString("method"),req.optJSONObject("params")); }
             catch (Exception e) { /* Malformed bridge input has no native effect. */ }
         });
@@ -346,30 +360,36 @@ public class MainActivity extends Activity {
             if (connection != null) connection.disconnect();
         }
     }
-    private boolean allowed(String raw) {
-        try {
-            Uri uri = Uri.parse(raw); String host = uri.getHost();
-            if (!"https".equals(uri.getScheme()) || uri.getUserInfo() != null || (uri.getPort() != -1 && uri.getPort() != 443)) return false;
-            return set("tipsy.chat","auth2.tipsy.chat","character.ai","auth.character.ai","policies.character.ai","accounts.google.com").contains(host)
-                    || "apple.com".equals(host) || (host != null && host.endsWith(".apple.com"));
-        } catch (Exception e) { return false; }
-    }
     private WebView createSource(boolean capture) {
-        WebView web = new WebView(this); settings(web);
+        WebView web = new WebView(this); settings(web, true);
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (!request.isForMainFrame()) return false;
                 if (pickerOpen && view == source) { toast(uiText(R.string.ui_hold_page)); return true; }
-                if (allowed(request.getUrl().toString())) return false;
-                toast(uiText(R.string.ui_outside_link)); return true;
+                // OAuth SDKs open an empty window first and assign location on the
+                // next tick. Let the blank frame through; every real navigation
+                // below is still checked against the allowlist.
+                String raw = request.getUrl().toString();
+                if ("about:blank".equals(raw)) return false;
+                String host = SourceNavigation.httpsHost(raw);
+                if (SourceNavigation.allowsHost(host)) return false;
+                String shown = Uri.parse(raw).getHost();
+                Log.d("RoleLeafAuth", "blocked main-frame host=" + (shown == null ? "?" : shown));
+                String message = uiText(R.string.ui_outside_link);
+                toast(shown == null ? message : message + "\n" + shown);
+                return true;
             }
             @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap icon) {
+                if (popups.contains(view)) {
+                    Log.d("RoleLeafAuth", "popup page " + safePage(url));
+                }
                 failCaptures(view, "The page changed. Try again.");
             }
             @Override public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
                 if (view == activeBrowserPage()) updateBrowserToolbar();
             }
             @Override public void onPageFinished(WebView view,String url) {
+                if (popups.contains(view)) Log.d("RoleLeafAuth", "popup finished " + safePage(url));
                 CookieManager.getInstance().flush();
                 if (view == activeBrowserPage()) updateBrowserToolbar();
                 if (view == worker && pendingReload != null && url.equals(view.getUrl())) {
@@ -385,13 +405,29 @@ public class MainActivity extends Activity {
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, Message result) {
-                if (!userGesture || pickerOpen || view != source || popup != null) return false;
-                popup = createSource(false); content.addView(popup,new FrameLayout.LayoutParams(-1,-1));
-                ((WebView.WebViewTransport)result.obj).setWebView(popup); result.sendToTarget();
+                // Firebase opens the provider window after an async round trip, so
+                // userGesture is often false even though the user clicked. The
+                // desktop build allows the same flow. Navigation stays limited to
+                // the allowlisted auth hosts and only one visible popup is stacked
+                // at a time.
+                if (pickerOpen || (view != source && !popups.contains(view))) {
+                    Log.d("RoleLeafAuth", "popup rejected picker=" + pickerOpen + " nested=" + (view != source));
+                    return false;
+                }
+                Log.d("RoleLeafAuth", "popup allowed gesture=" + userGesture);
+                WebView child = createSource(false);
+                popups.add(child);
+                popup = child;
+                content.addView(child,new FrameLayout.LayoutParams(-1,-1));
+                ((WebView.WebViewTransport)result.obj).setWebView(child); result.sendToTarget();
                 updateBrowserToolbar();
                 return true;
             }
-            @Override public void onCloseWindow(WebView view) { if (view == popup) { closePopup(); source.reload(); } }
+            @Override public void onCloseWindow(WebView view) {
+                if (!popups.contains(view)) return;
+                Log.d("RoleLeafAuth", "popup closed");
+                closePopup(view);
+            }
         });
         if (capture) {
             if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
@@ -424,11 +460,23 @@ public class MainActivity extends Activity {
         catch (Exception e) { throw new IllegalStateException("Export resources are missing",e); }
     }
     private void closePopup() {
-        if (popup == null) return;
-        content.removeView(popup);
-        popup.destroy();
-        popup = null;
+        if (popups.isEmpty()) return;
+        closePopup(popups.get(popups.size() - 1));
+    }
+    private void closePopup(WebView view) {
+        if (!popups.remove(view)) return;
+        content.removeView(view);
+        view.destroy();
+        popup = popups.isEmpty() ? null : popups.get(popups.size() - 1);
         updateBrowserToolbar();
+    }
+    private static String safePage(String raw) {
+        try {
+            Uri url = Uri.parse(raw);
+            return url.getScheme() + "://" + url.getHost() + (url.getPath() == null ? "" : url.getPath());
+        } catch (Exception e) {
+            return "?";
+        }
     }
     private void chooseZip() {
         Intent choose = new Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -451,7 +499,8 @@ public class MainActivity extends Activity {
     }
     private void switchSite(String value) {
         if (pickerOpen || value.equals(platform)) return;
-        closePopup(); source.setVisibility(View.GONE); platform = value; showSite();
+        while (!popups.isEmpty()) closePopup();
+        source.setVisibility(View.GONE); platform = value; showSite();
     }
     private void showSite() {
         source = siteViews.get(platform);
@@ -766,6 +815,10 @@ public class MainActivity extends Activity {
     @Override protected void onPause() {
         super.onPause(); CookieManager.getInstance().flush();
         if(busy && panel!=null) panel.evaluateJavascript("window.dispatchEvent(new Event('capture-background'))",null);
+    }
+    @Override protected void onStop() {
+        CookieManager.getInstance().flush();
+        super.onStop();
     }
     @Override protected void onDestroy() {
         destroyed=true; main.removeCallbacksAndMessages(null);

@@ -112,42 +112,65 @@ function imageFailure(error) {
 }
 
 async function collectImages(model, signal, progress, warnings, downloadImage) {
-  const assets = [], files = [], byURL = new Map(), byHash = new Map();
-  let totalBytes = 0, cardPNG = null, avatar = null, background = null, unresolvedCover = null;
+  const files = [], byURL = new Map(), byHash = new Map(), inflight = new Map();
+  let totalBytes = 0, cardPNG = null, avatar = null, background = null;
   const limit = Math.min(100, model.assets.length);
   const coverUsesAvatar = model.platform === 'character_ai' && !model.assets.some(asset => asset.role === 'background');
   if (model.assets.length > limit) warnings.push('Only the first 100 images were processed.');
+  const records = model.assets.slice(0, limit).map(asset => {
+    const { fallback_url: fallbackURL, visible_avatar_url: visibleAvatarURL, ...details } = asset;
+    return {
+      record: { ...details, status: 'failed', path: null },
+      urls: [...new Set([asset.url, fallbackURL, visibleAvatarURL].filter(Boolean))],
+    };
+  });
+  const assets = records.map(item => item.record);
+  let processed = 0;
+  const reportProgress = () => progress(globalThis.RoleLeafI18n?.t('Images processed: {count} of {total}', { count: processed, total: limit }) ?? `Images processed: ${processed} of ${limit}`);
 
   async function readImage(url) {
     if (byURL.has(url)) return byURL.get(url);
-    signal.throwIfAborted();
-    if (!BotPackage.mediaURL(url)) throw Error('Media host is not allowed or URL is invalid');
-    const controller = new AbortController();
-    const stop = () => controller.abort();
-    signal.addEventListener('abort', stop, { once: true });
-    const timeout = setTimeout(stop, 15000);
-    let image;
-    try {
-      image = await downloadImage(url, controller.signal);
-    } finally {
-      clearTimeout(timeout);
-      signal.removeEventListener('abort', stop);
-    }
-    signal.throwIfAborted();
-    if (typeof createImageBitmap === 'function') {
+    if (inflight.has(url)) return inflight.get(url);
+    const task = (async () => {
+      signal.throwIfAborted();
+      if (!BotPackage.mediaURL(url)) throw Error('Media host is not allowed or URL is invalid');
+      const controller = new AbortController();
+      const stop = () => controller.abort();
+      signal.addEventListener('abort', stop, { once: true });
+      const timeout = setTimeout(stop, 15000);
+      let image;
       try {
-        const bitmap = await createImageBitmap(new Blob([image.data], { type: imageMimeType(image.ext) }));
-        bitmap.close();
-      } catch {
-        throw Error('Image could not be decoded');
+        image = await downloadImage(url, controller.signal);
+      } finally {
+        clearTimeout(timeout);
+        signal.removeEventListener('abort', stop);
       }
+      signal.throwIfAborted();
+      // PNG bytes are already fully chunk-checked above; decoding them again
+      // adds noticeable work on low-end phones without improving validation.
+      if (image.ext !== 'png' && typeof createImageBitmap === 'function') {
+        try {
+          const bitmap = await createImageBitmap(new Blob([image.data], { type: imageMimeType(image.ext) }));
+          bitmap.close();
+        } catch {
+          throw Error('Image could not be decoded');
+        }
+      }
+      signal.throwIfAborted();
+      const hash = await BotPackage.sha(image.data);
+      const existing = byHash.get(hash);
+      if (existing) return existing;
+      if (totalBytes + image.data.length > 64 * 1024 * 1024) throw Error('Images exceed the combined 64 MB limit');
+      return { path: `assets/${hash}.${image.ext}`, data: image.data, sha256: hash };
+    })();
+    inflight.set(url, task);
+    try {
+      const saved = await task;
+      byURL.set(url, saved);
+      return saved;
+    } finally {
+      inflight.delete(url);
     }
-    signal.throwIfAborted();
-    const hash = await BotPackage.sha(image.data);
-    const existing = byHash.get(hash);
-    if (existing) return existing;
-    if (totalBytes + image.data.length > 64 * 1024 * 1024) throw Error('Images exceed the combined 64 MB limit');
-    return { path: `assets/${hash}.${image.ext}`, data: image.data, sha256: hash };
   }
 
   async function saveImage(record, saved, sourceURL) {
@@ -169,6 +192,10 @@ async function collectImages(model, signal, progress, warnings, downloadImage) {
       return false;
     }
     if (!byHash.has(saved.sha256)) {
+      if (totalBytes + saved.data.length > 64 * 1024 * 1024) {
+        record.error = 'Images exceed the combined 64 MB limit';
+        return false;
+      }
       files.push({ path: saved.path, data: saved.data });
       byHash.set(saved.sha256, saved);
       totalBytes += saved.data.length;
@@ -177,29 +204,25 @@ async function collectImages(model, signal, progress, warnings, downloadImage) {
     return true;
   }
 
-  for (const asset of model.assets.slice(0, limit)) {
-    progress(globalThis.RoleLeafI18n?.t('Images processed: {count} of {total}', { count: assets.length, total: limit }) ?? `Images processed: ${assets.length} of ${limit}`);
-    const { fallback_url: fallbackURL, visible_avatar_url: visibleAvatarURL, ...assetDetails } = asset;
-    const record = { ...assetDetails, status: 'failed', path: null };
-    assets.push(record);
+  async function processRecord(item) {
+    const { record, urls } = item;
     if (signal.aborted) {
       record.error = 'Stopped by user';
-      continue;
+      return;
     }
-    if (asset.role === 'cover' && coverUsesAvatar && avatar) {
+    if (record.role === 'cover' && item.coverUsesAvatar && avatar) {
       await saveImage(record, avatar.saved, avatar.sourceURL);
-      continue;
+      return;
     }
-
     let selected;
     const failures = [];
-    for (const url of new Set([asset.url, fallbackURL, visibleAvatarURL].filter(Boolean))) {
+    for (const url of urls) {
       if (signal.aborted) break;
       try {
         selected = { saved: await readImage(url), sourceURL: url };
         break;
       } catch (error) {
-        failures.push({ role: asset.role, url, status: 'failed', error: imageFailure(error) });
+        failures.push({ role: record.role, url, status: 'failed', error: imageFailure(error) });
       }
     }
     if (failures.length) {
@@ -207,14 +230,36 @@ async function collectImages(model, signal, progress, warnings, downloadImage) {
       if (failures.length > 1) record.attempts = failures.slice(1);
     }
     if (!selected) {
-      if (model.platform === 'character_ai' && asset.role === 'cover') unresolvedCover = record;
-      continue;
+      return;
     }
     if (failures.length) record.fallback = failures[0];
     if (await saveImage(record, selected.saved, selected.sourceURL)) {
-      if (asset.role === 'avatar') avatar = selected;
-      if (asset.role === 'background') background = selected;
+      if (record.role === 'avatar') avatar = selected;
+      if (record.role === 'background') background = selected;
     }
+  }
+
+  async function processPool(items, limit = 2) {
+    let index = 0;
+    async function worker() {
+      while (true) {
+        const current = index++;
+        if (current >= items.length) return;
+        await processRecord(items[current]);
+        processed++;
+        reportProgress();
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  }
+
+  reportProgress();
+  await processPool(records.filter(item => item.record.role !== 'cover'));
+  const covers = records.filter(item => item.record.role === 'cover');
+  const unresolvedCovers = [];
+  await processPool(covers.map(item => ({ ...item, coverUsesAvatar: coverUsesAvatar && Boolean(avatar) })), 1);
+  for (const item of covers) {
+    if (item.record.status !== 'saved') unresolvedCovers.push(item.record);
   }
   if (!signal.aborted && !avatar && background && model.platform === 'character_ai') {
     let record = assets.find(asset => asset.role === 'avatar');
@@ -226,9 +271,10 @@ async function collectImages(model, signal, progress, warnings, downloadImage) {
     if (await saveImage(record, background.saved, background.sourceURL)) avatar = background;
   }
   const coverSource = background || avatar;
-  if (!signal.aborted && unresolvedCover && coverSource) {
-    unresolvedCover.fallback = { role: 'cover', url: unresolvedCover.url, status: 'failed', error: unresolvedCover.error };
-    await saveImage(unresolvedCover, coverSource.saved, coverSource.sourceURL);
+  for (const record of unresolvedCovers) {
+    if (signal.aborted || !coverSource) break;
+    record.fallback = { role: 'cover', url: record.url, status: 'failed', error: record.error };
+    await saveImage(record, coverSource.saved, coverSource.sourceURL);
   }
   if (avatar && model.card) {
     try { cardPNG = await createPngCard(avatar.saved.data, BotPackage.creatorMetadata(model.card, assets)); }

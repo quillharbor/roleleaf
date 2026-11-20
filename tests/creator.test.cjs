@@ -137,6 +137,33 @@ test('an unavailable Character.AI background falls back to the saved avatar for 
   assert.equal(unconfigured.files.length, 0);
 });
 
+test('image collection uses bounded parallel downloads without changing asset order', async () => {
+  const context = vm.createContext({
+    URL, AbortController, TextEncoder, TextDecoder, Uint8Array, DataView, crypto, atob, Blob,
+    setTimeout, clearTimeout,
+  });
+  for (const file of ['core', 'png', 'bot-model', 'bot-package', 'image-ref', 'image-ref-config', 'collect-bot']) {
+    vm.runInContext(fs.readFileSync(`tipsy-exporter/${file}.js`, 'utf8'), context);
+  }
+  const collect = vm.runInContext('collectImages', context);
+  const png = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg==', 'base64'));
+  const assets = Array.from({ length: 8 }, (_, index) => ({
+    role: 'message_image', url: `https://characterai.io/image-${index}.png`,
+  }));
+  let active = 0, maximum = 0;
+  const result = await collect({ platform: 'character_ai', id: caiId, name: 'Synthetic', assets },
+    new AbortController().signal, () => {}, [], async () => {
+      active++;
+      maximum = Math.max(maximum, active);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      active--;
+      return { data: png, ext: 'png' };
+    });
+  assert.equal(maximum, 2);
+  assert.deepEqual(result.assets.map(asset => asset.url), assets.map(asset => asset.url));
+  assert.ok(result.assets.every(asset => asset.status === 'saved'));
+});
+
 test('the creator ZIP keeps Tipsy linked profiles and moves their saved images into the shared asset list', async () => {
   const signedURL = 'https://img.tipsy.chat/linked.webp?token=synthetic-linked';
   const badURL = 'https://img.tipsy.chat/missing.webp?token=synthetic-bad';

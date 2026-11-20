@@ -81,6 +81,11 @@ test('match_id is stable across repeat exports and changes with source platform 
 });
 test('ZIP rejects traversal, duplicate paths and untrusted media domains',()=>{for(const path of ['../secret','/abs','a/../b','a\\b'])assert.throws(()=>P.zip([{path,data:'x'}]));assert.throws(()=>P.zip([{path:'same',data:'x'},{path:'same',data:'y'}]));for(const u of ['https://evil.test/x','http://characterai.io/x','https://characterai.io.evil.test/x','https://user:pass@characterai.io/x'])assert.equal(P.mediaURL(u),false);assert.equal(P.mediaURL('https://characterai.io/i/avatar.webp'),true);assert.throws(()=>P.imageType(new TextEncoder().encode('<svg onload="evil">')));});
 
+test('async ZIP assembly preserves the exact synchronous archive bytes', async () => {
+ const files = [{ path: 'one.txt', data: 'one' }, { path: 'two.bin', data: Uint8Array.of(1, 2, 3) }];
+ assert.deepEqual(Array.from(await P.zipAsync(files)), Array.from(P.zip(files)));
+});
+
 test('failed chat attachments retain a placeholder count without leaking the image URL', async () => {
  const url = 'https://characterai.io/test.png?X-Amz-Signature=synthetic-secret';
  const extraURL = 'https://characterai.io/extra.png?token=synthetic-secret-two';

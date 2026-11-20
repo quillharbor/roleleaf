@@ -2,6 +2,9 @@
 'use strict';
 const M=root.BotModel,enc=new TextEncoder(),json=x=>JSON.stringify(x,null,2);
 const MAX_ZIP_BYTES = 128 * 1024 * 1024;
+const yieldToEventLoop = () => typeof root.setTimeout === 'function'
+  ? new Promise(resolve => root.setTimeout(resolve, 0))
+  : Promise.resolve();
 const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function bytes(x){return typeof x==='string'?enc.encode(x):x;}
 function pathOK(name){return typeof name==='string'&&name.length<240&&!name.startsWith('/')&&!name.includes('\\')&&name.split('/').every(p=>p&&p!=='.'&&p!=='..')&&!/[\x00-\x1f]/.test(name);}
@@ -9,6 +12,15 @@ function zip(files){
  if(files.length>10000)throw Error('Too many files in the export');const parts=[],central=[];let offset=0,size=0;const used=new Set();
  for(const file of files){if(!pathOK(file.path)||used.has(file.path))throw Error('Duplicate or invalid path in the export');used.add(file.path);const name=enc.encode(file.path),data=bytes(file.data);size+=data.length;if(size>MAX_ZIP_BYTES)throw Error('Export exceeds 128 MB');const crc=root.TipsyExporterPNG.crc32(data);const h=new Uint8Array(30+name.length),v=new DataView(h.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x800,true);v.setUint16(12,33,true);v.setUint32(14,crc,true);v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);v.setUint16(26,name.length,true);h.set(name,30);parts.push(h,data);
  const c=new Uint8Array(46+name.length),w=new DataView(c.buffer);w.setUint32(0,0x02014b50,true);w.setUint16(4,20,true);w.setUint16(6,20,true);w.setUint16(8,0x800,true);w.setUint16(14,33,true);w.setUint32(16,crc,true);w.setUint32(20,data.length,true);w.setUint32(24,data.length,true);w.setUint16(28,name.length,true);w.setUint32(42,offset,true);c.set(name,46);central.push(c);offset+=h.length+data.length;
+ }
+ const centralSize=central.reduce((n,c)=>n+c.length,0),end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,files.length,true);v.setUint16(10,files.length,true);v.setUint32(12,centralSize,true);v.setUint32(16,offset,true);const out=new Uint8Array(offset+centralSize+22);let at=0;for(const p of [...parts,...central,end]){out.set(p,at);at+=p.length;}return out;
+}
+async function zipAsync(files){
+ if(files.length>10000)throw Error('Too many files in the export');const parts=[],central=[];let offset=0,size=0;const used=new Set();
+ for(const file of files){if(!pathOK(file.path)||used.has(file.path))throw Error('Duplicate or invalid path in the export');used.add(file.path);const name=enc.encode(file.path),data=bytes(file.data);size+=data.length;if(size>MAX_ZIP_BYTES)throw Error('Export exceeds 128 MB');const crc=root.TipsyExporterPNG.crc32(data);const h=new Uint8Array(30+name.length),v=new DataView(h.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x800,true);v.setUint16(12,33,true);v.setUint32(14,crc,true);v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);v.setUint16(26,name.length,true);h.set(name,30);parts.push(h,data);
+ const c=new Uint8Array(46+name.length),w=new DataView(c.buffer);w.setUint32(0,0x02014b50,true);w.setUint16(4,20,true);w.setUint16(6,20,true);w.setUint16(8,0x800,true);w.setUint16(14,33,true);w.setUint32(16,crc,true);w.setUint32(20,data.length,true);w.setUint32(24,data.length,true);w.setUint16(28,name.length,true);w.setUint32(42,offset,true);c.set(name,46);central.push(c);offset+=h.length+data.length;
+ // Let the UI paint and process Stop between files instead of freezing on the whole archive.
+ await yieldToEventLoop();
  }
  const centralSize=central.reduce((n,c)=>n+c.length,0),end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,files.length,true);v.setUint16(10,files.length,true);v.setUint32(12,centralSize,true);v.setUint32(16,offset,true);const out=new Uint8Array(offset+centralSize+22);let at=0;for(const p of [...parts,...central,end]){out.set(p,at);at+=p.length;}return out;
 }
@@ -201,7 +213,7 @@ async function build(input){
    } : asset),
   });
  }
- return {files,manifest,report,bytes:zip(files)};
+ return {files,manifest,report,bytes:await zipAsync(files)};
 }
-root.BotPackage=Object.freeze({zip,sha,build,creatorMetadata,downloadImage,mediaURL,imageType,pathOK});
+root.BotPackage=Object.freeze({zip,zipAsync,sha,build,creatorMetadata,downloadImage,mediaURL,imageType,pathOK});
 })(globalThis);

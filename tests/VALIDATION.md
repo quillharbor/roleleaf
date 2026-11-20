@@ -1,6 +1,6 @@
-# Demo validation — 2026-11-16
+# Demo validation — 2026-11-20
 
-Candidate version: 0.5.7 / Android 0.5.7-demo.22. Android and Chrome are the only visitor-facing demo packages; no store publication. macOS is built only for internal shared-runtime verification.
+Candidate version: 0.5.16 / Android 0.5.16-demo.37. Android and Chrome are the only visitor-facing demo packages; no store publication. macOS is built only for internal shared-runtime verification.
 
 - 67 Node tests passed, including synthetic C.AI Recent/My Characters and Tipsy creator-list cases, creator backup boundaries and chat history handling.
 - Chrome ZIP CRC passed; manifest version 0.5.7; unpacked folder and packaged source verified.
@@ -50,3 +50,15 @@ Both Android builds passed 69 Node tests, assembly, lint, and signature verifica
 Run `node scripts/sample-image-ref.cjs` to regenerate the creator, chat, and missing-image ZIPs in `dist/`. Import the creator sample and then the chat sample to exercise matching by `match_id`. Read images from the paths in `assets/assets.json`. The missing-image sample keeps its message and reports one expected image (`image_attachment_count`) with no matching asset, so the importer can display a placeholder. The same import can be run in isolation to test the importer's behavior when the corresponding character is absent.
 
 The automated decryption test uses a synthetic key pair. The test samples use the configured public key, so decryption with the server's private key must be confirmed by the importer owner. Android fixed-signature assembly and upgrade, on-device testing, fresh source-account export, and target import remain pending. Production macOS distribution requires a Developer ID identity and notarization.
+
+## Android export responsiveness
+
+115 automated tests passed. Android list avatars now load directly from the approved media hosts and fall back to the native proxy only on error; unchanged polling results no longer rebuild the list. Image downloads use at most two concurrent workers, already validated PNG bytes skip a redundant decode, and image references keep the same stable ID and JWE format. ZIP assembly yields between files and Android transfers image and ZIP data in 512 KiB chunks instead of 128 KiB chunks.
+
+Synthetic measurements reduced 30 image downloads from about 667 ms to 343 ms while preserving asset order and deduplication. A 10 MiB synthetic archive produced the same ZIP bytes; bridge calls fell from 80 to 20. Chrome `0.5.15`, arm64 macOS `0.5.15` test DMG, Android `0.5.15-demo.33` test APK and the fixed-signature Demo APK were rebuilt and checked. The emitted APK contains the updated assets, and the Demo certificate still matches the existing signer. No Android device or emulator was attached, so installation, upgrade and live-account latency remain unverified.
+
+## Android login persistence and OAuth popups
+
+Android `0.5.16-demo.37` enables persistent cookies, DOM and database storage for source pages, permits third-party cookies required by sign-in flows, flushes cookies on pause and stop, and mirrors the desktop popup policy: allowlisted auth pages may open even when Firebase requests the window after an async step, nested popups are stacked, and `about:blank` bootstrap frames are permitted. The debug test application ID is `io.github.quillharbor.roleleaf.demo.test`; the Demo remains `io.github.quillharbor.roleleaf.demo`. This prevents a test-channel switch from forcing an uninstall and deleting WebView login state.
+
+Both APKs passed the 115-test suite, debug/release assembly and lint. The Demo certificate still matches `9ee94ddc…82855f`, and versionCode increased to 37. Live Google/Apple login persistence and Character.AI access on the reporting device remain unverified. A Cloudflare network-reputation block is not an allowlist failure and cannot be bypassed by the app.

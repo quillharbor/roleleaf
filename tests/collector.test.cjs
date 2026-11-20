@@ -45,7 +45,7 @@ test('Tipsy creator queue saves the matching editor after Chrome closes the prof
   location: { href: `https://extension.test/collector.html?tab=1&batch=${batch}` },
   document: { documentElement: {}, querySelectorAll: () => [], getElementById: node, createElement: () => node(Symbol()) },
   chrome: {
-   runtime: { getManifest: () => ({ version: '0.5.15' }) },
+   runtime: { getManifest: () => ({ version: '0.5.16' }) },
    storage: { session: {
     get: async key => ({ [key]: { sourceTab: 1, platform: 'tipsy', creator: true,
      bots: ids.map((id, index) => ({ id, url: profile, name: `Synthetic ${index}` })) } }),

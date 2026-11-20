@@ -19,8 +19,8 @@ android {
         applicationId 'io.github.quillharbor.roleleaf.demo'
         minSdk 26
         targetSdk 35
-        versionCode 31
-        versionName '0.5.15-demo.31'
+        versionCode 37
+        versionName '0.5.16-demo.37'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -28,6 +28,12 @@ android {
     }
     buildFeatures { buildConfig true }
     buildTypes {
+        debug {
+            // Keep internal test installs separate from the fixed-signature Demo.
+            // Sharing an application ID with a different signer forces users to
+            // uninstall one package and wipes all WebView login state.
+            applicationIdSuffix '.test'
+        }
         release {
             signingConfig signingConfigs.demo
             debuggable false

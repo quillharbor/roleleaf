@@ -4,7 +4,7 @@ English · [العربية](docs/readme/ar.md) · [日本語](docs/readme/ja.md)
 
 Keep a local copy of your AI characters and conversations from Tipsy and Character.AI.
 
-**Demo 0.5.14 · Chrome update; Android remains 0.5.13 · No app-store release.**
+**Demo 0.5.16 · Chrome and Android 0.5.16-demo.37 · No app-store release.**
 
 | Platform | Requirements | Install |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ RoleLeaf opens in English. On Android, tap **⋮ → Language** in the toolbar. 
 
 Creator backups and current-conversation exports have different coverage. Missing fields and incomplete history are reported; a successful ZIP does not guarantee a complete account backup.
 
-The 0.5.14 candidate keeps stable `match_id` matching and includes verified source IDs in creator packages. See the [ZIP parsing rules](docs/character-id.md).
+The 0.5.16 candidate keeps stable `match_id` matching, includes verified source IDs in creator packages, and adds the shared image manifest. See the [ZIP parsing rules](docs/character-id.md).
 
 ## Development
 

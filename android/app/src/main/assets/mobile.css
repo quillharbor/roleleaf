@@ -28,7 +28,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .chat-picker input[type=checkbox] { margin: 0; width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
 .text-button { color: var(--accent); }
 .picker-list { overflow: auto; overscroll-behavior: contain; min-height: 0; padding: 0 16px 12px; }
-.bot-row { min-height: 58px; display: flex; align-items: center; gap: 12px; padding: 8px 6px; border-top: 1px solid var(--line); }
+.bot-row { min-height: 58px; display: flex; align-items: center; gap: 12px; padding: 8px 6px; border-top: 1px solid var(--line); content-visibility: auto; contain-intrinsic-size: 58px; }
 .bot-row[data-selected=true] { background: #2d263e; }
 .bot-name { min-width: 0; overflow-wrap: anywhere; }
 .bot-avatar { position: relative; overflow: hidden; display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: #443758; color: #e6d7ff; }

@@ -10,6 +10,7 @@ let creator = false, profileLink = null;
 let opening = false, listedBots = [], pickerRevision = 0;
 const selectedBots = new Set();
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const IMAGE_CHUNK = 512 * 1024, ZIP_CHUNK = 512 * 1024, POLL_MS = 400;
 function renderBots() {
   $('chat-mode').disabled = $('creator-mode').disabled = Boolean(job || saving || opening);
   $('load-list').disabled = Boolean(job || saving || opening);
@@ -18,7 +19,7 @@ function renderBots() {
   const matches = matchingBots();
   $('list-count').textContent = opening ? t(creator ? 'Loading your characters…' : 'Loading chats…') :
     [t('{count} characters loaded', { count: listedBots.length }), ...(query ? [t('{count} matches', { count: matches.length })] : [])].join(' · ');
-  $('bot-list').replaceChildren();
+  const rows = [];
   for (const bot of matches) {
     const row = document.createElement('label'); row.className = 'bot-row'; row.dataset.botId = bot.id;
     row.dataset.selected = String(selectedBots.has(bot.id));
@@ -28,13 +29,20 @@ function renderBots() {
     if (BotPackage.mediaURL(bot.avatar)) {
       const image = document.createElement('img');
       image.alt = ''; image.loading = 'lazy'; image.decoding = 'async';
-      image.onerror = () => image.remove();
-      image.src = '/avatar?url=' + encodeURIComponent(bot.avatar);
+      image.referrerPolicy = 'no-referrer';
+      image.onerror = () => {
+        if (!image.dataset.nativeFallback) {
+          image.dataset.nativeFallback = '1';
+          image.src = '/avatar?url=' + encodeURIComponent(bot.avatar);
+        } else image.remove();
+      };
+      image.src = bot.avatar;
       avatar.append(image);
     }
     const name = document.createElement('span'); name.className = 'bot-name'; name.dir = 'auto'; name.textContent = bot.name;
-    row.append(checkbox, avatar, name); $('bot-list').append(row);
+    row.append(checkbox, avatar, name); rows.push(row);
   }
+  $('bot-list').replaceChildren(...rows);
   $('list-empty').hidden = opening || matches.length > 0;
   $('list-empty').textContent = t(query ? 'No matching characters.' : creator ? 'No saved characters found.' : 'Sign in on the source site, then refresh the list.');
   renderSelection();
@@ -70,7 +78,7 @@ async function loadCaiBots(request, ownCharacters) {
       if (request !== pickerRevision) return;
       profile = await workerTabs.sendMessage(1, { type: 'BOT_ANDROID_LIST', scope: 'profile' }).catch(() => null);
       if (profile?.url) break;
-      await pause(500);
+      await pause(POLL_MS);
     }
     if (!profile?.url) throw Error('Sign in to Character.AI to load your characters.');
     await call('openCaiList', { scope: 'creator', url: profile.url });
@@ -84,14 +92,15 @@ async function loadCaiBots(request, ownCharacters) {
     if (request !== pickerRevision) return;
     if (response?.platform === 'character_ai' && (ownCharacters ? response.ok : response.found)) {
       found = true;
-      listedBots = (response.bots || []).filter(bot => typeof bot.name === 'string' &&
+      const nextBots = (response.bots || []).filter(bot => typeof bot.name === 'string' &&
         (ownCharacters ? BotCreator.target('character_ai', bot.id, bot.url) : BotModel.route(bot.url)?.platform === 'character_ai'));
-      const signature = JSON.stringify(listedBots.map(bot => [bot.id, bot.name, bot.avatar]));
-      stable = signature === previous ? stable + 1 : 0; previous = signature;
-      renderBots();
-      if (stable >= 4 && (listedBots.length || attempt >= 12)) break;
+      const signature = JSON.stringify(nextBots.map(bot => [bot.id, bot.name, bot.avatar]));
+      const changed = signature !== previous;
+      stable = changed ? 0 : stable + 1; previous = signature;
+      if (changed) { listedBots = nextBots; renderBots(); }
+      if (stable >= 4 && (listedBots.length || attempt >= 8)) break;
     }
-    if (attempt < 39) await pause(500);
+    if (attempt < 39) await pause(POLL_MS);
   }
   if (!found) throw Error('Could not load this list. Check your connection and sign in to Character.AI.');
   for (const id of selectedBots) if (!listedBots.some(bot => bot.id === id)) selectedBots.delete(id);
@@ -112,7 +121,7 @@ async function loadTipsyCreatorBots(request) {
       if (request !== pickerRevision) return;
       profile = await ownProfile(workerTabs);
       if (profile) break;
-      await pause(500);
+      await pause(POLL_MS);
     }
   }
   if (request !== pickerRevision) return;
@@ -125,15 +134,16 @@ async function loadTipsyCreatorBots(request) {
     if (request !== pickerRevision) return;
     if (response?.ok && response.platform === 'tipsy') {
       found = true;
-      listedBots = (response.bots || []).filter(bot => typeof bot.name === 'string' &&
+      const nextBots = (response.bots || []).filter(bot => typeof bot.name === 'string' &&
         BotCreator.target('tipsy', bot.id, bot.url)?.url === profile.url);
-      const signature = JSON.stringify(listedBots.map(bot => [bot.id, bot.name, bot.avatar]));
-      stable = signature === previous ? stable + 1 : 0; previous = signature;
-      renderBots();
-      if (!response.more && stable >= 4 && (listedBots.length || attempt >= 12)) break;
+      const signature = JSON.stringify(nextBots.map(bot => [bot.id, bot.name, bot.avatar]));
+      const changed = signature !== previous;
+      stable = changed ? 0 : stable + 1; previous = signature;
+      if (changed) { listedBots = nextBots; renderBots(); }
+      if (!response.more && stable >= 4 && (listedBots.length || attempt >= 8)) break;
       if (response.more) await workerTabs.sendMessage(1, { type: 'BOT_ANDROID_LIST', scope: 'more' });
     }
-    if (attempt < 39) await pause(500);
+    if (attempt < 39) await pause(POLL_MS);
   }
   if (!found) throw Error('Could not load your characters. Check your connection and sign in to Tipsy.');
   for (const id of selectedBots) if (!listedBots.some(bot => bot.id === id)) selectedBots.delete(id);
@@ -172,12 +182,15 @@ async function loadBots() {
       sidebar = await tabs.sendMessage(1, { type: 'BOT_SIDEBAR' });
       if (request !== pickerRevision) return;
       if (sidebar.found) {
-        found = true; listedBots = sidebar.bots;
-        const signature = JSON.stringify(listedBots.map(bot => [bot.id, bot.name, bot.avatar]));
-        stable = signature === previous ? stable + 1 : 0; previous = signature;
+        found = true;
+        const nextBots = sidebar.bots;
+        const signature = JSON.stringify(nextBots.map(bot => [bot.id, bot.name, bot.avatar]));
+        const changed = signature !== previous;
+        stable = changed ? 0 : stable + 1; previous = signature;
+        if (changed) { listedBots = nextBots; renderBots(); }
         if (listedBots.length && stable >= 4) break;
       }
-      if (attempt < 24) await pause(500);
+      if (attempt < 24) await pause(POLL_MS);
     }
     if (!found) throw Error('Open the source site, sign in, and go to your chat list.');
     for (const id of selectedBots) if (!listedBots.some(bot => bot.id === id)) selectedBots.delete(id);
@@ -297,7 +310,7 @@ async function imageDownload(url, signal) {
     const meta = await call('imageDownload', { url, id });
     signal.throwIfAborted();
     const data = new Uint8Array(meta.size);
-    for (let offset = 0; offset < data.length; offset += 131072) {
+    for (let offset = 0; offset < data.length; offset += IMAGE_CHUNK) {
       signal.throwIfAborted(); data.set(decode(await call('imageRead', { id, offset })), offset);
     }
     return { data, ext: BotPackage.imageType(data) };
@@ -403,8 +416,8 @@ async function collectSelected() {
 }
 async function stageZip(file) {
   await call('zipBegin', { filename: file.filename, size: file.bytes.length });
-  for (let offset = 0; offset < file.bytes.length; offset += 131072) {
-    await call('zipChunk', { offset, data: encode(file.bytes.subarray(offset, offset + 131072)) });
+  for (let offset = 0; offset < file.bytes.length; offset += ZIP_CHUNK) {
+    await call('zipChunk', { offset, data: encode(file.bytes.subarray(offset, offset + ZIP_CHUNK)) });
   }
 }
 async function saveBatch(copy) {

@@ -1,6 +1,6 @@
 {
   "product": "RoleLeaf",
-  "release": "0.5.15",
+  "release": "0.5.16",
   "status": "local-review",
   "license": "pending",
   "locales": [
@@ -14,11 +14,11 @@
   "artifacts": [
     {
       "platform": "chrome",
-      "path": "dist/RoleLeaf-0.5.15.zip",
-      "filename": "RoleLeaf-0.5.15.zip",
-      "version": "0.5.15",
-      "bytes": 422413,
-      "sha256": "bfe9638f67b836dca7134cfb76ad9a116e328a04e71b9801619cd675fcd1c2b3",
+      "path": "dist/RoleLeaf-0.5.16.zip",
+      "filename": "RoleLeaf-0.5.16.zip",
+      "version": "0.5.16",
+      "bytes": 425869,
+      "sha256": "a5fc2bc32ff664973eb90b9463542c62ae58762b2ac630c4b6d5ca134b3431e6",
       "architecture": "architecture-independent Chrome extension",
       "minimum": "Desktop Chrome 111+",
       "channel": "unpacked-extension",
@@ -28,11 +28,11 @@
     },
     {
       "platform": "macos",
-      "path": "desktop/release/0.5.15-arm64-qp9fV5/RoleLeaf-TEST-ONLY-0.5.15-arm64.dmg",
-      "filename": "RoleLeaf-TEST-ONLY-0.5.15-arm64.dmg",
-      "version": "0.5.15",
-      "bytes": 108862236,
-      "sha256": "60d5ab3ad6140473616d94f375aa9d32ee97ed465e696a77cd61017be2318f12",
+      "path": "desktop/release/0.5.16-arm64-ypD1ah/RoleLeaf-TEST-ONLY-0.5.16-arm64.dmg",
+      "filename": "RoleLeaf-TEST-ONLY-0.5.16-arm64.dmg",
+      "version": "0.5.16",
+      "bytes": 108878639,
+      "sha256": "a97c877f626fa3463692fa34bae0330a3b107cc20e8db50f9a3c2f92c2e9d684",
       "architecture": "arm64",
       "minimum": "macOS 13",
       "signing": "ad-hoc",
@@ -45,12 +45,12 @@
     },
     {
       "platform": "android",
-      "path": "android/release/0.5.15-demo.31/RoleLeaf-DEMO-0.5.15-demo.31.apk",
-      "filename": "RoleLeaf-DEMO-0.5.15-demo.31.apk",
-      "version": "0.5.15-demo.31",
-      "version_code": 31,
-      "bytes": 4421627,
-      "sha256": "d8f7da085b945480334d2a8b86eaa1f3fa3f9c5cf72b49e713ae95905cc60308",
+      "path": "android/release/0.5.16-demo.37/RoleLeaf-DEMO-0.5.16-demo.37.apk",
+      "filename": "RoleLeaf-DEMO-0.5.16-demo.37.apk",
+      "version": "0.5.16-demo.37",
+      "version_code": 37,
+      "bytes": 4424075,
+      "sha256": "0ed665bd6db492498a58e206f7fcc230647568310f96dede16d5ee9f424cbd93",
       "application_id": "io.github.quillharbor.roleleaf.demo",
       "minimum": "Android 8+",
       "architecture": "architecture-independent Java/WebView",
@@ -65,7 +65,8 @@
     }
   ],
   "checks": [
-    "111 Node tests including image fallback, ZIP size trimming, Tipsy creator editor navigation, and Character.AI chat export with verified history and missing character details",
+    "115 Node tests including Android OAuth persistence, bounded image downloads, yielding ZIP assembly, image fallback, ZIP size trimming, Tipsy creator editor navigation, and Character.AI chat export with verified history and missing character details",
+    "Chrome ZIP, arm64 macOS test DMG, Android debug test APK and fixed-signature Demo APK rebuilt with matching shared runtime",
     "Synthetic creator, chat and missing-image packages share the same match_id and pass ZIP and SHA-256 checks",
     "Synthetic-key JWE round trip and production public-key configuration"
   ],
@@ -75,7 +76,67 @@
     "Android fixed-signature upgrade has not been installed on a physical device.",
     "Production macOS signing, notarization and clean-machine acceptance."
   ],
+  "android_navigation_test": {
+    "version": "0.5.15-demo.32",
+    "version_code": 32,
+    "path": "android/release/0.5.15-demo.32/RoleLeaf-TEST-ONLY-0.5.15-demo.32.apk",
+    "bytes": 4953063,
+    "sha256": "3da26320da1c596575a4b114fbd5fe5b6dffa87cd76f825dd39f74492584991e",
+    "signing": "local debug key",
+    "status": "TEST-ONLY",
+    "checks": [
+      "All 187 macOS Google account domains, the YouTube account host, and rejected URL cases",
+      "Node test suite, assembleDebug, lintDebug, APK CRC and APK v2 signature"
+    ],
+    "not_verified": [
+      "Live Character.AI Google sign-in and the exact host blocked in the original report"
+    ]
+  },
+  "android_performance_test": {
+    "version": "0.5.15-demo.33",
+    "version_code": 33,
+    "path": "android/release/0.5.15-demo.33/RoleLeaf-TEST-ONLY-0.5.15-demo.33.apk",
+    "bytes": 4954055,
+    "sha256": "024d8198566a1cbb5f092f041bcd1d5c2bca3d5a12e83ac09a094263c1044e0a",
+    "signing": "local debug key",
+    "status": "TEST-ONLY",
+    "checks": [
+      "114 Node tests, assembleDebug, lintDebug, APK CRC and APK v2 signature",
+      "Bundled assets contain the 512 KiB bridge chunks, direct avatar display with native fallback, bounded image concurrency and yielding ZIP assembly"
+    ],
+    "not_verified": [
+      "Installation and live export latency on a physical Android device or emulator"
+    ]
+  },
+  "android_login_persistence_test": {
+    "version": "0.5.16-demo.37",
+    "version_code": 37,
+    "test_apk": {
+      "path": "android/release/0.5.16-demo.37/RoleLeaf-TEST-ONLY-0.5.16-demo.37.apk",
+      "bytes": 4954827,
+      "sha256": "d4d996f3c29ce1471579f23bb9a1ade6eef72eafade286b4b0654a1da12ea59b",
+      "application_id": "io.github.quillharbor.roleleaf.demo.test",
+      "signing": "local debug key"
+    },
+    "demo_apk": {
+      "path": "android/release/0.5.16-demo.37/RoleLeaf-DEMO-0.5.16-demo.37.apk",
+      "bytes": 4424075,
+      "sha256": "0ed665bd6db492498a58e206f7fcc230647568310f96dede16d5ee9f424cbd93",
+      "application_id": "io.github.quillharbor.roleleaf.demo",
+      "certificate_sha256": "9ee94ddced91416ffbf165edca62d6ea30bb1d59f4b7b2ab78b61bb88a82855f"
+    },
+    "checks": [
+      "115 Node tests, assembleDebug, lintDebug, assembleRelease and lintRelease",
+      "Debug and Demo application IDs are distinct, so switching channels does not require uninstalling and wiping WebView state",
+      "Cookies, DOM storage, database storage, third-party auth cookies and session flush are enabled for source pages",
+      "OAuth popups now match the desktop build: allowlisted auth pages may open even when Firebase requests the window after an async step, nested popups stack, and blank bootstrap frames are permitted"
+    ],
+    "not_verified": [
+      "Live Tipsy Google/Apple sign-in persistence and Character.AI access on the reporting device",
+      "Cloudflare challenge acceptance; blocks based on network reputation are outside the app allowlist"
+    ]
+  },
   "demo_url": "https://quillharbor.github.io/roleleaf-demo/",
-  "checksum_path": "dist/RoleLeaf-0.5.15-checks/SHA256SUMS",
-  "publication": "Chrome and Android 0.5.15 demo update"
+  "checksum_path": "dist/RoleLeaf-0.5.16-checks/SHA256SUMS",
+  "publication": "Chrome and Android 0.5.16 demo update"
 }

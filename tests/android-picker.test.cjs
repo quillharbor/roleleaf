@@ -79,7 +79,7 @@ test('Android renders recent bots, searches and selects only visible results', a
   const f = fixture(); await ready(f);
   assert.equal(f.node('bot-list').children.length, 3);
   const avatars = f.node('bot-list').children.map(row => row.children[1]);
-  assert.equal(avatars[0].children[0].src, '/avatar?url=https%3A%2F%2Fimg.tipsy.chat%2Favatar.png');
+  assert.equal(avatars[0].children[0].src, 'https://img.tipsy.chat/avatar.png');
   assert.equal(avatars[1].children.length, 0);
   f.node('bot-search').value = '100000002'; f.node('bot-search').oninput();
   assert.equal(f.node('bot-list').children.length, 1);
@@ -133,6 +133,20 @@ test('Android batch retains finished ZIPs on failure, cancellation and size cap'
     assert.equal(result.results.length, 3);
     if (mode !== 'failure') assert.equal(result.results[2].status, 'skipped');
   }
+});
+
+test('Android writes ZIPs through larger bridge chunks to avoid UI stalls', async () => {
+  const f = fixture();
+  const before = f.calls.filter(method => method === 'zipChunk').length;
+  await vm.runInContext('stageZip({ filename: "character_109999999_2026-01-01T00-00-00-000Z.zip", bytes: new Uint8Array(1024 * 1024 + 1) })', f.env);
+  const chunks = f.calls.filter(method => method === 'zipChunk').length - before;
+  assert.equal(chunks, 3);
+});
+
+test('Android lets the provider finish its token exchange before touching the source page', () => {
+  const main = fs.readFileSync('android/app/src/main/java/io/github/quillharbor/roleleaf/test/MainActivity.java', 'utf8');
+  assert.doesNotMatch(main, /source\.reload\(\)/);
+  assert.doesNotMatch(main, /refreshSourceSoon/);
 });
 
 test('C.AI mobile home automatically loads fresh Recent and My Characters without source navigation', async () => {
